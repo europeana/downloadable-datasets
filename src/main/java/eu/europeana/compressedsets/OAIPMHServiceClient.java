@@ -58,7 +58,7 @@ public class OAIPMHServiceClient {
         module.addDeserializer(GetRecordResponse.class, new GetRecordResponseDeserializer());
         module.addDeserializer(RDFMetadata.class, new RDFMetadataDeserializer());
         module.addDeserializer(ListRecordsResponse.class, new ListRecordsResponseDeserializer());
-        module.addDeserializer(ListSetsResponse.class, new ListSetResponseDeserializer());
+        module.addDeserializer(ListSetsResponse.class, new ListSetsResponseDeserializer());
         mapper.registerModule(module);
         LOG.info("Using OAI-PMH server at {}", oaipmhServer);
     }
