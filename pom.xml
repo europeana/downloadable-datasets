@@ -58,7 +58,7 @@
         </dependency>
 
         <dependency>
-            <groupId>eu.europeana</groupId>
+            <groupId>eu.europeana.oai-pmh2</groupId>
             <artifactId>oai-pmh2-common</artifactId>
             <version>${oai-pmh.version}</version>
         </dependency>
