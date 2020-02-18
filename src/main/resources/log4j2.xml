@@ -22,6 +22,6 @@
         <!-- <Logger name="logFile" level="INFO">
             <AppenderRef ref="fileLogger"/>
         </Logger> -->
-        <Logger name="eu.europeana.compressedsets" level="INFO"/>
+        <Logger name="eu.europeana.downloads" level="INFO"/>
     </Loggers>
 </Configuration>

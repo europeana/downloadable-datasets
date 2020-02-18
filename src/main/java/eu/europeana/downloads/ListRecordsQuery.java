@@ -1,4 +1,4 @@
-package eu.europeana.compressedsets;
+package eu.europeana.downloads;
 
 import eu.europeana.oaipmh.model.ListRecords;
 import eu.europeana.oaipmh.model.Record;

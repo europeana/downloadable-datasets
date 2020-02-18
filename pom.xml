@@ -9,9 +9,9 @@
     </parent>
 
 
-    <artifactId>compressed-sets</artifactId>
+    <artifactId>downloads</artifactId>
     <version>0.1-SNAPSHOT</version>
-    <name>Compressed CHO sets generator</name>
+    <name>Downloadable CHO data sets generator</name>
     <packaging>jar</packaging>
 
     <properties>
@@ -23,7 +23,7 @@
         <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
         <jackson.version>2.9.10</jackson.version>
 
-        <spring.boot.mainclass>eu.europeana.compressedsets.CompressedSetsGenerator</spring.boot.mainclass>
+        <spring.boot.mainclass>eu.europeana.downloads.DownloadsGenerator</spring.boot.mainclass>
     </properties>
 
     <dependencyManagement>

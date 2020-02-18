@@ -1,4 +1,4 @@
-package eu.europeana.compressedsets;
+package eu.europeana.downloads;
 
 import eu.europeana.oaipmh.service.exception.OaiPmhException;
 

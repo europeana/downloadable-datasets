@@ -1,4 +1,4 @@
-package eu.europeana.compressedsets;
+package eu.europeana.downloads;
 
 import eu.europeana.oaipmh.model.GetRecord;
 import eu.europeana.oaipmh.model.Header;

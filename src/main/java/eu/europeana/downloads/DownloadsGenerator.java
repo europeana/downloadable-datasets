@@ -1,4 +1,4 @@
-package eu.europeana.compressedsets;
+package eu.europeana.downloads;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -8,8 +8,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.PropertySource;
 
 @SpringBootApplication
-@PropertySource("classpath:compressed-sets.properties")
-public class CompressedSetsGenerator implements CommandLineRunner {
+@PropertySource("classpath:downloads.properties")
+public class DownloadsGenerator implements CommandLineRunner {
     @Autowired
     private OAIPMHServiceClient oaipmhServiceClient;
 
@@ -22,6 +22,6 @@ public class CompressedSetsGenerator implements CommandLineRunner {
     }
 
     public static void main(String[] args) {
-        new SpringApplicationBuilder().sources(CompressedSetsGenerator.class).web(WebApplicationType.NONE).run(args);
+        new SpringApplicationBuilder().sources(DownloadsGenerator.class).web(WebApplicationType.NONE).run(args);
     }
 }

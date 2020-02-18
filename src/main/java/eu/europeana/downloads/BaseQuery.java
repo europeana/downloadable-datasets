@@ -1,6 +1,6 @@
-package eu.europeana.compressedsets;
+package eu.europeana.downloads;
 
-import static eu.europeana.compressedsets.OAIPMHQuery.VERB_PARAMETER;
+import static eu.europeana.downloads.OAIPMHQuery.VERB_PARAMETER;
 
 public class BaseQuery {
     static final String METADATA_PREFIX_PARAMETER = "&metadataPrefix=%s";
