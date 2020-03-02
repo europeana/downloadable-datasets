@@ -24,27 +24,21 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
     private static final String ZIP_EXTENSION = ".zip";
     private static final String PATH_SEPERATOR = "/";
 
-    @Value("${GetRecord.metadataPrefix}")
+    @Value("${metadataPrefix}")
     private String metadataPrefix;
 
-    @Value("${GetRecord.identifier}")
-    private String identifier;
-
-    @Value("${saveToFile}")
-    private String saveToFile;
-
-    @Value("${saveToFolder}")
+    @Value("${sets-folder}")
     private String directoryLocation;
 
+    private String identifier;
 
     public GetRecordQuery() {
     }
 
-    public GetRecordQuery(String metadataPrefix, String identifier, String directoryLocation, String saveToFile) {
+    public GetRecordQuery(String metadataPrefix, String identifier, String directoryLocation) {
         this.metadataPrefix = metadataPrefix;
         this.identifier = identifier;
         this.directoryLocation = directoryLocation;
-        this.saveToFile = saveToFile;
     }
 
     @Override
@@ -80,10 +74,9 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
                         LOG.error("Empty metadata for identifier {}", currentIdentifier);
                     }
                 }
-                if (StringUtils.equalsIgnoreCase(saveToFile, "true")) {
+                //write in Zip
+                ZipUtility.writeInZip(zout, writer, record);
 
-                    ZipUtility.writeInZip(zout, writer, record);
-                }
             }
         } catch (IOException e) {
             LOG.error("Error creating outputStreams ", e);

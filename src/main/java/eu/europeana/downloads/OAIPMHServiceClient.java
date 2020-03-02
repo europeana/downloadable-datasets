@@ -24,7 +24,7 @@ public class OAIPMHServiceClient {
 
     private static final Logger LOG = LogManager.getLogger(OAIPMHServiceClient.class);
 
-    @Value("${oaipmhServer}")
+    @Value("${oaipmh-server}")
     private String oaipmhServer;
 
     private RestTemplate restTemplate = new RestTemplate();
@@ -48,7 +48,6 @@ public class OAIPMHServiceClient {
     @PostConstruct
     public void init() {
         queries.put("ListIdentifiers", listIdentifiersQuery);
-        queries.put("GetRecord", getRecordQuery);
         queries.put("ListRecords", listRecordsQuery);
         queries.put("ListSets", listSetsQuery);
 
