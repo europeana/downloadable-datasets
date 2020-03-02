@@ -102,23 +102,23 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
 
         ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
-        List<String> sets =  setsQuery.getSets(oaipmhServer);
+        List<String> setsFromListSets =  setsQuery.getSets(oaipmhServer);
 
-        logger.setTotalItems(sets.size());
+        logger.setTotalItems(setsFromListSets.size());
 
         List<Future<ListRecordsResult>> results = null;
         List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
 
-        int perThread = sets.size() / threads;
+        int perThread = setsFromListSets.size() / threads;
 
         // create task for each resource provider
         for (int i = 0; i < threads; i++) {
             int fromIndex = i * perThread;
             int toIndex = (i + 1) * perThread;
             if (i == threads - 1) {
-                toIndex = sets.size();
+                toIndex = setsFromListSets.size();
             }
-            tasks.add(new ListSetsExecutor(sets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+            tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
         }
         try {
             // invoke a separate thread for each provider

@@ -8,10 +8,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
 
 @Component
 public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {

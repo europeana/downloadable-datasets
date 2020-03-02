@@ -5,7 +5,6 @@ import eu.europeana.oaipmh.model.Header;
 import eu.europeana.oaipmh.model.RDFMetadata;
 import eu.europeana.oaipmh.model.Record;
 import eu.europeana.oaipmh.model.response.GetRecordResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;

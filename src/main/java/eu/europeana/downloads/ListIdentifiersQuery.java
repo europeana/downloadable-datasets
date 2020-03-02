@@ -1,6 +1,5 @@
 package eu.europeana.downloads;
 
-import com.ctc.wstx.util.StringUtil;
 import eu.europeana.oaipmh.model.Header;
 import eu.europeana.oaipmh.model.ListIdentifiers;
 import eu.europeana.oaipmh.model.response.ListIdentifiersResponse;
@@ -12,16 +11,11 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.*;
-import java.util.zip.ZipOutputStream;
 
 @Component
 public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {

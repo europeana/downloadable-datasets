@@ -35,9 +35,6 @@ public class OAIPMHServiceClient {
     private ListIdentifiersQuery listIdentifiersQuery;
 
     @Autowired
-    private GetRecordQuery getRecordQuery;
-
-    @Autowired
     private ListRecordsQuery listRecordsQuery;
 
     @Autowired
