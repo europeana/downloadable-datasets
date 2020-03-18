@@ -62,7 +62,7 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
         long start = System.currentTimeMillis();
 
         String request = getRequest(oaipmhServer.getOaipmhServer(), currentIdentifier);
-        GetRecordResponse response = (GetRecordResponse) oaipmhServer.makeRequest(request, GetRecordResponse.class);
+        GetRecordResponse response = oaipmhServer.getGetRecordRequest(request);
         GetRecord responseObject = response.getGetRecord();
         try (final ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(
                 new File(directoryLocation + PATH_SEPERATOR + ZipUtility.getDirectoryName(currentIdentifier) + ZIP_EXTENSION)));
