@@ -93,7 +93,8 @@ public class XMLResponseParser {
             listRecords.setRecords(recordList);
             listRecords.setResumptionToken(resumptionToken);
             recordResponse.setListRecords(listRecords);
-
+            //close the eventReader
+            eventReader.close();
         } catch (XMLStreamException e) {
             LOG.debug("Error parsing ListRecordResponse {} ", e);
         } catch (ParseException e) {
