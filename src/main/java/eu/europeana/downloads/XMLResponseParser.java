@@ -30,9 +30,9 @@ public class XMLResponseParser {
         GetRecordResponse recordResponse = new GetRecordResponse();
         XMLInputFactory factory = XMLInputFactory.newInstance();
         factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-
+        XMLEventReader eventReader = null;
         try (InputStream targetStream = new ByteArrayInputStream(responseAsString.getBytes())){
-            XMLEventReader eventReader = factory.createXMLEventReader(targetStream);
+             eventReader = factory.createXMLEventReader(targetStream);
 
             GetRecord getRecord = new GetRecord();
             Record record = new Record();
@@ -53,6 +53,15 @@ public class XMLResponseParser {
         } catch (IOException e) {
             LOG.debug("Error creating the input stream {} ", e);
         }
+        finally {
+            if (eventReader != null) {
+                try {
+                    eventReader.close();
+                } catch (XMLStreamException xse) {
+                    // Ignore
+                }
+            }
+        }
         return recordResponse;
     }
 
@@ -60,9 +69,9 @@ public class XMLResponseParser {
         ListRecordsResponse recordResponse = new ListRecordsResponse();
         XMLInputFactory factory = XMLInputFactory.newInstance();
         factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-
+        XMLEventReader eventReader = null;
         try(InputStream targetStream = new ByteArrayInputStream(responseAsString.getBytes())) {
-            XMLEventReader eventReader = factory.createXMLEventReader(targetStream);
+            eventReader = factory.createXMLEventReader(targetStream);
 
             ListRecords listRecords = new ListRecords();
             List<Record> recordList = new ArrayList<>();
@@ -93,14 +102,21 @@ public class XMLResponseParser {
             listRecords.setRecords(recordList);
             listRecords.setResumptionToken(resumptionToken);
             recordResponse.setListRecords(listRecords);
-            //close the eventReader
-            eventReader.close();
         } catch (XMLStreamException e) {
             LOG.debug("Error parsing ListRecordResponse {} ", e);
         } catch (ParseException e) {
             LOG.debug("Error parsing Datestamp {} ", e);
         } catch (IOException e) {
             LOG.debug("Error creating the input stream {} ", e);
+        }
+        finally {
+            if (eventReader != null) {
+                try {
+                    eventReader.close();
+                } catch (XMLStreamException xse) {
+                    // Ignore
+                }
+            }
         }
         return recordResponse;
     }
