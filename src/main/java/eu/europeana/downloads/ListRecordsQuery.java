@@ -173,7 +173,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
 
         String request = getRequest(oaipmhServer.getOaipmhServer(), setIdentifier);
-        ListRecordsResponse response = (ListRecordsResponse) oaipmhServer.makeRequest(request, ListRecordsResponse.class);
+        ListRecordsResponse response = oaipmhServer.getListRecordRequest(request);
         ListRecords responseObject = response.getListRecords();
         try (final ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(new File(directoryLocation + PATH_SEPERATOR + setIdentifier + ZIP_EXTENSION)));
              OutputStreamWriter writer = new OutputStreamWriter(zout)) {
@@ -194,7 +194,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 while (responseObject.getResumptionToken() != null) {
 
                     request = getResumptionRequest(oaipmhServer.getOaipmhServer(), responseObject.getResumptionToken().getValue());
-                    response = (ListRecordsResponse) oaipmhServer.makeRequest(request, ListRecordsResponse.class);
+                    response = oaipmhServer.getListRecordRequest(request);
                     responseObject = response.getListRecords();
 
                     if (StringUtils.equalsIgnoreCase(saveToFile, "true")) {
