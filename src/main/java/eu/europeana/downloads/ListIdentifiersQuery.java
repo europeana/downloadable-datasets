@@ -22,7 +22,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
     private static final Logger LOG = LogManager.getLogger(ListIdentifiersQuery.class);
 
-    @Value("${metadataPrefix}")
+    @Value("${metadata-prefix}")
     private String metadataPrefix;
 
     @Value("${harvest-from}")
@@ -76,12 +76,16 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
-        if (sets.isEmpty()) {
-            executeMultithreadListRecords(oaipmhServer, null);
-        } else {
-            for (String setIdentifier : sets) {
-                 executeSingleThreadListRecord(oaipmhServer, setIdentifier);
+        if (sets.size()!= 1 && threads > 0) {
+            if(sets.isEmpty())  {
+                executeMultithreadListRecords(oaipmhServer, null);
+             } else {
+                for (String setIdentifier : sets) {
+                    executeMultithreadListRecords(oaipmhServer, setIdentifier);
+                }
             }
+        } else {
+            executeSingleThreadListRecord(oaipmhServer, set);
         }
     }
 
@@ -139,7 +143,6 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Interrupted.", e);
-            Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
             LOG.error("Problem with task thread execution.", e);
         }

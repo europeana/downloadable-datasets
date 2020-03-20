@@ -18,7 +18,7 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
     @Value("${log-progress-interval}")
     private Integer logProgressInterval;
 
-    @Value("${metadataPrefix}")
+    @Value("${metadata-prefix}")
     private String metadataPrefix;
 
     public ListSetsQuery() {

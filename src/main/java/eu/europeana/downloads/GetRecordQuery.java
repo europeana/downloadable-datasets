@@ -23,10 +23,8 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
     private static final String ZIP_EXTENSION = ".zip";
     private static final String PATH_SEPERATOR = "/";
 
-    @Value("${metadataPrefix}")
     private String metadataPrefix;
 
-    @Value("${sets-folder}")
     private String directoryLocation;
 
     private String identifier;
@@ -47,7 +45,6 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
-
         execute(oaipmhServer, identifier);
     }
 
@@ -91,7 +88,6 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
         if (identifier != null && !identifier.isEmpty()) {
             sb.append(String.format(IDENTIFIER_PARAMETER, identifier));
         }
-
         return sb.toString();
     }
 }
