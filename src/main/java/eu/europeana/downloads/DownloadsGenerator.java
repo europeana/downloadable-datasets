@@ -1,5 +1,6 @@
 package eu.europeana.downloads;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.WebApplicationType;
@@ -15,10 +16,10 @@ public class DownloadsGenerator implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (args == null || args.length == 0) {
-            throw new IllegalArgumentException("Please specify a verb as first argument (e.g. ListIdentifiers, ListRecords)");
+        if (StringUtils.isEmpty(oaipmhServiceClient.getHarvestMethod())) {
+            throw new IllegalArgumentException("Please specify a harvest method (e.g. ListIdentifiers, ListRecords)");
         }
-        oaipmhServiceClient.execute(args[0]);
+        oaipmhServiceClient.execute(oaipmhServiceClient.getHarvestMethod());
     }
 
     public static void main(String[] args) {

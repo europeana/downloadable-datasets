@@ -27,6 +27,10 @@ public class OAIPMHServiceClient {
     @Value("${oaipmh-server}")
     private String oaipmhServer;
 
+    @Value("${harvest-method}")
+    private String harvestMethod;
+
+
     private RestTemplate restTemplate = new RestTemplate();
 
     private ObjectMapper mapper;
@@ -81,5 +85,9 @@ public class OAIPMHServiceClient {
             LOG.error("Exception when deserializing response.", e);
         }
         return response;
+    }
+
+    public String getHarvestMethod() {
+        return harvestMethod;
     }
 }
