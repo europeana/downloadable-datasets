@@ -84,7 +84,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
-        if (sets.size() != 1 && threads > 0) {
+        if (sets.size() != 1 && threads > 1) {
             executeMultithreadListRecords(oaipmhServer, sets);
         } else {
             executeListRecords(oaipmhServer, set);
