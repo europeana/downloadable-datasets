@@ -21,7 +21,7 @@
 
         <oai-pmh.version>0.7-SNAPSHOT</oai-pmh.version>
         <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
-        <jackson.version>2.9.10</jackson.version>
+        <jackson.version>2.10.3</jackson.version>
 
         <spring.boot.mainclass>eu.europeana.downloads.DownloadsGenerator</spring.boot.mainclass>
     </properties>
