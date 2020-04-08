@@ -8,44 +8,18 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
 
 @Component
 public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
     private static final Logger LOG = LogManager.getLogger(ListSetsQuery.class);
 
-    @Value("${LogProgress.interval}")
+    @Value("${log-progress-interval}")
     private Integer logProgressInterval;
 
-    @Value("${ListRecords.metadataPrefix}")
+    @Value("${metadata-prefix}")
     private String metadataPrefix;
-
-    @Value("${ListSets.useListRecord}")
-    private boolean useListRecord;
-
-    @Value("${saveToFile}")
-    private String saveToFile;
-
-    @Value("${saveToFolder}")
-    private String directoryLocation;
-
-    @Value("${ListSets.threads}")
-    private int threads;
-
-    private ExecutorService threadPool;
-
-
-    private void initThreadPool() {
-        // init thread pool
-        if (threads < 1) {
-            threads = 1;
-        }
-        threadPool = Executors
-                .newFixedThreadPool(threads);
-    }
 
     public ListSetsQuery() {
     }
@@ -55,18 +29,12 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
     }
 
     @Override
-    public String getVerbName(){ return useListRecord ? "ListRecords" : "ListSets";
+    public String getVerbName(){ return "ListSets";
     }
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
-        if(useListRecord) {
-            executeMultithreadListRecords(oaipmhServer);
-        }
-        else {
-            execute(oaipmhServer, null);
-         }
-
+        execute(oaipmhServer, null);
     }
 
     public List<String> getSets(OAIPMHServiceClient oaipmhServer) {
@@ -74,59 +42,6 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
         execute(oaipmhServer, setsFromListSets );
         return setsFromListSets;
     }
-
-    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer) {
-        initThreadPool();
-
-        long counter = 0;
-        long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
-
-        ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
-        List<String> sets =  setsQuery.getSets(oaipmhServer);
-
-        logger.setTotalItems(sets.size());
-
-        List<Future<ListRecordsResult>> results = null;
-        List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
-
-        int perThread = sets.size() / threads;
-
-        // create task for each resource provider
-        for (int i = 0; i < threads; i++) {
-            int fromIndex = i * perThread;
-            int toIndex = (i + 1) * perThread;
-            if (i == threads - 1) {
-                toIndex = sets.size();
-            }
-            tasks.add(new ListSetsExecutor(sets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, saveToFile, oaipmhServer, logProgressInterval));
-        }
-        try {
-            // invoke a separate thread for each provider
-            results = threadPool.invokeAll(tasks);
-
-            ListRecordsResult listRecordsResult;
-            for (Future<ListRecordsResult> result : results) {
-                listRecordsResult = result.get();
-                LOG.info("Executor finished with {} errors in {} sec.",
-                        listRecordsResult.getErrors(), listRecordsResult.getTime());
-                counter += perThread;
-                logger.logProgress(counter);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOG.error("Interrupted.", e);
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            LOG.error("Problem with task thread execution.", e);
-        }
-
-        clean();
-
-        LOG.info("ListRecords for all sets executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + sets.size() + " sets.");
-    }
-
 
     private void execute(OAIPMHServiceClient oaipmhServer, List<String> setsFromListSet) {
         long counter = 0;
@@ -181,12 +96,5 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
         StringBuilder sb = new StringBuilder();
         sb.append(getBaseRequest(oaipmhServer, getVerbName()));
         return sb.toString();
-    }
-
-    @PreDestroy
-    private void clean() {
-        if (threadPool != null) {
-            threadPool.shutdown();
-        }
     }
 }

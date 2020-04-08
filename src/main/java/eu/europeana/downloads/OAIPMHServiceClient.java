@@ -24,8 +24,12 @@ public class OAIPMHServiceClient {
 
     private static final Logger LOG = LogManager.getLogger(OAIPMHServiceClient.class);
 
-    @Value("${oaipmhServer}")
+    @Value("${oaipmh-server}")
     private String oaipmhServer;
+
+    @Value("${harvest-method}")
+    private String harvestMethod;
+
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -33,9 +37,6 @@ public class OAIPMHServiceClient {
 
     @Autowired
     private ListIdentifiersQuery listIdentifiersQuery;
-
-    @Autowired
-    private GetRecordQuery getRecordQuery;
 
     @Autowired
     private ListRecordsQuery listRecordsQuery;
@@ -48,7 +49,6 @@ public class OAIPMHServiceClient {
     @PostConstruct
     public void init() {
         queries.put("ListIdentifiers", listIdentifiersQuery);
-        queries.put("GetRecord", getRecordQuery);
         queries.put("ListRecords", listRecordsQuery);
         queries.put("ListSets", listSetsQuery);
 
@@ -86,6 +86,10 @@ public class OAIPMHServiceClient {
         }
         return response;
     }
+
+
+    public String getHarvestMethod() {
+        return harvestMethod;
 
     public GetRecordResponse getGetRecordRequest(String request) {
         String responseAsString = restTemplate.getForObject(request, String.class);

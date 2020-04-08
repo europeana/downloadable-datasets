@@ -20,18 +20,15 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
 
     private String directoryLocation;
 
-    private String saveToFile;
-
     private String metadataPrefix;
 
 
     private OAIPMHServiceClient oaipmhServer;
 
-    public ListSetsExecutor(List<String> sets, String metadataPrefix, String directoryLocation, String saveToFile, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
+    public ListSetsExecutor(List<String> sets, String metadataPrefix, String directoryLocation, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
         this.sets = sets;
         this.metadataPrefix = metadataPrefix;
         this.directoryLocation = directoryLocation;
-        this.saveToFile = saveToFile;
         this.oaipmhServer = oaipmhServer;
         this.logProgressInterval = logProgressInterval;
     }
@@ -54,7 +51,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         }
         for(String set : sets ) {
             try {
-                new ListRecordsQuery(metadataPrefix, set, directoryLocation, saveToFile, logProgressInterval).execute(oaipmhServer);
+                new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer);
             } catch (Exception e) {
                 LOG.error("Error retrieving set {} {}", set,  e);
                 errors++;
@@ -72,6 +69,4 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         }
         return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, errors);
     }
-
-
 }
