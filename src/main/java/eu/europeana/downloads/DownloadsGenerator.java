@@ -10,6 +10,7 @@ import org.springframework.context.annotation.PropertySource;
 
 @SpringBootApplication
 @PropertySource("classpath:downloads.properties")
+@PropertySource(value = "classpath:downloads.user.properties", ignoreResourceNotFound = true)
 public class DownloadsGenerator implements CommandLineRunner {
     @Autowired
     private OAIPMHServiceClient oaipmhServiceClient;
