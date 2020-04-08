@@ -87,7 +87,17 @@ public class OAIPMHServiceClient {
         return response;
     }
 
+
     public String getHarvestMethod() {
         return harvestMethod;
+
+    public GetRecordResponse getGetRecordRequest(String request) {
+        String responseAsString = restTemplate.getForObject(request, String.class);
+        return XMLResponseParser.parseGetRecordResponse(responseAsString);
+    }
+
+    public ListRecordsResponse getListRecordRequest(String request) {
+        String responseAsString = restTemplate.getForObject(request, String.class);
+        return XMLResponseParser.parseListRecordResponse(responseAsString);
     }
 }
