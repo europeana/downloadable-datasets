@@ -1,5 +1,6 @@
 package eu.europeana.downloads;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.WebApplicationType;
@@ -9,7 +10,7 @@ import org.springframework.context.annotation.PropertySource;
 
 @SpringBootApplication
 @PropertySource("classpath:downloads.properties")
-@PropertySource(value = "classpath:downloads.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "classpath:downloads.user.properties", ignoreResourceNotFound = true)
 public class DownloadsGenerator implements CommandLineRunner {
 
     @Autowired
@@ -17,10 +18,10 @@ public class DownloadsGenerator implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (args == null || args.length == 0) {
-            throw new IllegalArgumentException("Please specify a verb as first argument (e.g. ListIdentifiers, ListRecords)");
+        if (StringUtils.isEmpty(oaipmhServiceClient.getHarvestMethod())) {
+            throw new IllegalArgumentException("Please specify a harvest method (e.g. ListIdentifiers, ListRecords)");
         }
-        oaipmhServiceClient.execute(args[0]);
+        oaipmhServiceClient.execute(oaipmhServiceClient.getHarvestMethod());
     }
 
     public static void main(String[] args) {

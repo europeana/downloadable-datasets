@@ -29,54 +29,41 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private static final String ZIP_EXTENSION = ".zip";
     private static final String PATH_SEPERATOR = "/";
 
-    @Value("${ListRecords.metadataPrefix}")
+    @Value("${metadata-prefix}")
     private String metadataPrefix;
 
-    @Value("${ListRecords.from}")
+    @Value("${harvest-from}")
     private String from;
 
-    @Value("${ListRecords.until}")
-    private String until;
-
-    @Value("${ListRecords.set}")
+    @Value("${harvest-sets}")
     private String set;
 
-    @Value("${ListRecords.useGetRecord}")
-    private boolean useGetRecord;
-
-    @Value("${ListRecords.threads}")
-    private int threads;
-
-    private ExecutorService threadPool;
-
-    @Value("${LogProgress.interval}")
+    @Value("${log-progress-interval}")
     private Integer logProgressInterval;
 
-    @Value("${saveToFile}")
-    private String saveToFile;
-
-    @Value("${saveToFolder}")
+    @Value("${sets-folder}")
     private String directoryLocation;
 
+    @Value("${harvest-threads}")
+    private int threads;
 
     private List<String> sets = new ArrayList<>();
+
+    private ExecutorService threadPool;
 
     public ListRecordsQuery() {
     }
 
-    public ListRecordsQuery(String metadataPrefix, String set, String directoryLocation, String saveToFile, int logProgressInterval) {
+    public ListRecordsQuery(String metadataPrefix, String set, String directoryLocation, int logProgressInterval) {
         this.metadataPrefix = metadataPrefix;
         this.set = set;
         this.directoryLocation = directoryLocation;
-        this.saveToFile = saveToFile;
         this.logProgressInterval = logProgressInterval;
-        initSets();
     }
 
-
     @PostConstruct
-    public void initSets() {
-        if (set != null && !set.isEmpty()) {
+    public final void initSets() {
+        if (set != null && !set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
     }
@@ -90,57 +77,45 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 .newFixedThreadPool(threads);
     }
 
-
     @Override
     public String getVerbName() {
-        return useGetRecord ? "ListIdentifiers" : "ListRecords";
+        return "ListRecords";
     }
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
-        if (sets.isEmpty()) {
-            execute(oaipmhServer, null);
+        if (sets.size() != 1 && threads > 1) {
+            executeMultithreadListRecords(oaipmhServer, sets);
         } else {
-            for (String setIdentifier : sets) {
-                execute(oaipmhServer, setIdentifier);
-            }
+            executeListRecords(oaipmhServer, set);
         }
     }
 
-    private void execute(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
-        if (useGetRecord) {
-            executeMultithreadListRecords(oaipmhServer, setIdentifier);
-        } else {
-            executeListRecords(oaipmhServer, setIdentifier);
-        }
-    }
-
-    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
+    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {
         initThreadPool();
-
         long counter = 0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
-
-        ListIdentifiersQuery identifiersQuery = prepareListIdentifiersQuery(setIdentifier);
-        List<String> identifiers = identifiersQuery.getIdentifiers(oaipmhServer);
-        logger.setTotalItems(identifiers.size());
-
+        List<String> setsFromListSets = sets;
+        if(sets.isEmpty()) {
+            ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
+            setsFromListSets = setsQuery.getSets(oaipmhServer);
+        }
+        logger.setTotalItems(setsFromListSets.size());
         List<Future<ListRecordsResult>> results = null;
         List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
 
-        int perThread = identifiers.size() / threads;
+        int perThread = setsFromListSets.size() / threads;
 
         // create task for each resource provider
         for (int i = 0; i < threads; i++) {
             int fromIndex = i * perThread;
             int toIndex = (i + 1) * perThread;
             if (i == threads - 1) {
-                toIndex = identifiers.size();
+                toIndex = setsFromListSets.size();
             }
-            tasks.add(new ListRecordsExecutor(identifiers.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, saveToFile, oaipmhServer, logProgressInterval));
+            tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
         }
-
         try {
             // invoke a separate thread for each provider
             results = threadPool.invokeAll(tasks);
@@ -149,22 +124,21 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             for (Future<ListRecordsResult> result : results) {
                 listRecordsResult = result.get();
                 LOG.info("Executor finished with {} errors in {} sec.",
-                         listRecordsResult.getErrors(), listRecordsResult.getTime());
+                        listRecordsResult.getErrors(), listRecordsResult.getTime());
                 counter += perThread;
                 logger.logProgress(counter);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Interrupted.", e);
-            Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
             LOG.error("Problem with task thread execution.", e);
         }
 
         clean();
 
-        LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + identifiers.size() + " identifiers.");
+        LOG.info("ListRecords for all sets executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
+                ". Harvested " + sets.size() + " sets.");
     }
 
     private void executeListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
@@ -173,17 +147,16 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
 
         String request = getRequest(oaipmhServer.getOaipmhServer(), setIdentifier);
-        ListRecordsResponse response = (ListRecordsResponse) oaipmhServer.makeRequest(request, ListRecordsResponse.class);
+        ListRecordsResponse response = oaipmhServer.getListRecordRequest(request);
         ListRecords responseObject = response.getListRecords();
         try (final ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(new File(directoryLocation + PATH_SEPERATOR + setIdentifier + ZIP_EXTENSION)));
              OutputStreamWriter writer = new OutputStreamWriter(zout)) {
 
-            if (StringUtils.equalsIgnoreCase(saveToFile, "true")) {
-                for(Record record : responseObject.getRecords()) {
+              //writing in ZIP
+              for(Record record : responseObject.getRecords()) {
                     ZipUtility.writeInZip(zout, writer, record);
-                }
-            }
-            if (responseObject != null) {
+              }
+             if (responseObject != null) {
                 counter += responseObject.getRecords().size();
 
                 if (responseObject.getResumptionToken() != null) {
@@ -194,13 +167,11 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 while (responseObject.getResumptionToken() != null) {
 
                     request = getResumptionRequest(oaipmhServer.getOaipmhServer(), responseObject.getResumptionToken().getValue());
-                    response = (ListRecordsResponse) oaipmhServer.makeRequest(request, ListRecordsResponse.class);
+                    response = oaipmhServer.getListRecordRequest(request);
                     responseObject = response.getListRecords();
-
-                    if (StringUtils.equalsIgnoreCase(saveToFile, "true")) {
+                        //writing in ZIP
                         for (Record record : responseObject.getRecords()) {
                             ZipUtility.writeInZip(zout, writer, record);
-                        }
                     }
                     if (responseObject == null) {
 
@@ -219,12 +190,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 ". Harvested " + counter + " records.");
     }
 
-    private ListIdentifiersQuery prepareListIdentifiersQuery(String setIdentifier) {
-        ListIdentifiersQuery query = new ListIdentifiersQuery(metadataPrefix, from, until, setIdentifier, 30);
-        query.initSets();
-        return query;
-    }
-
     private String getResumptionRequest(String oaipmhServer, String resumptionToken) {
         return getBaseRequest(oaipmhServer, getVerbName()) +
                 String.format(RESUMPTION_TOKEN_PARAMETER, resumptionToken);
@@ -237,10 +202,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (from != null && !from.isEmpty()) {
             sb.append(String.format(FROM_PARAMETER, from));
         }
-        if (until != null && !until.isEmpty()) {
-            sb.append(String.format(UNTIL_PARAMETER, until));
-        }
-        if (set != null) {
+        if (set != null && !set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sb.append(String.format(SET_PARAMETER, setIdentifier));
         }
         return sb.toString();
