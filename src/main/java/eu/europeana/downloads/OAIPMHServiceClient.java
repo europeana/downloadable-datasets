@@ -90,6 +90,7 @@ public class OAIPMHServiceClient {
 
     public String getHarvestMethod() {
         return harvestMethod;
+    }
 
     public GetRecordResponse getGetRecordRequest(String request) {
         String responseAsString = restTemplate.getForObject(request, String.class);
