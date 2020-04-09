@@ -170,9 +170,9 @@ public class XMLResponseParser {
         StringBuilder metadataValue = new StringBuilder(Constants.XML_DECLARATION);
 
         if (StringUtils.contains(response, identifier)) {
-            int metadatastartIndex = StringUtils.indexOf(response, "<metadata>", StringUtils.indexOf(response, identifier));
-            int metadatEndIndex = StringUtils.indexOf(response, "</metadata>", metadatastartIndex);
-            String value = StringUtils.substring(response, metadatastartIndex + 10, metadatEndIndex);
+            int metadataStartIndex = StringUtils.indexOf(response, "<metadata>", StringUtils.indexOf(response, identifier));
+            int metadataEndIndex = StringUtils.indexOf(response, "</metadata>", metadataStartIndex);
+            String value = StringUtils.substring(response, metadataStartIndex + 10, metadataEndIndex);
             metadataValue.append(value);
         }
         metadata.setMetadata(metadataValue.toString());
