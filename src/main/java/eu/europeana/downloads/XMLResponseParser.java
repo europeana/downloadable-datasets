@@ -167,14 +167,15 @@ public class XMLResponseParser {
     private static void paraseMetadataString(String response, String identifier, Record record) {
         RDFMetadata metadata = new RDFMetadata();
         record.setMetadata(metadata);
-        String metadataValue = null;
+        StringBuilder metadataValue = new StringBuilder(Constants.XML_DECLARATION);
 
         if (StringUtils.contains(response, identifier)) {
             int metadatastartIndex = StringUtils.indexOf(response, "<metadata>", StringUtils.indexOf(response, identifier));
             int metadatEndIndex = StringUtils.indexOf(response, "</metadata>", metadatastartIndex);
-            metadataValue = StringUtils.substring(response, metadatastartIndex + 10, metadatEndIndex);
+            String value = StringUtils.substring(response, metadatastartIndex + 10, metadatEndIndex);
+            metadataValue.append(value);
         }
-        metadata.setMetadata(metadataValue);
+        metadata.setMetadata(metadataValue.toString());
     }
 
     private static void parseResumptionToken(StartElement startElement, ResumptionToken resumptionToken) throws ParseException {
