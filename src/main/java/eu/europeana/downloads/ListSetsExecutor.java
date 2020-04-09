@@ -43,13 +43,13 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         // this callable will log progress. This is to avoid too much logging from all threads.
         synchronized(this) {
             if (logger == null) {
-                logger = new ProgressLogger(sets.size(), logProgressInterval);
+                logger = new ProgressLogger("List sets", sets.size(), logProgressInterval);
                 loggerThreadId = Thread.currentThread().getId();
                 LOG.debug("Created new progress logger for thread {} - {} items, logging interval {} ms",
                         loggerThreadId, sets.size(), logProgressInterval);
             }
         }
-        for(String set : sets ) {
+        for (String set : sets ) {
             try {
                 new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer);
             } catch (Exception e) {

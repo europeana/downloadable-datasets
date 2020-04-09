@@ -95,9 +95,9 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         initThreadPool();
         long counter = 0;
         long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
+        ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
         List<String> setsFromListSets = sets;
-        if(sets.isEmpty()) {
+        if (sets.isEmpty()) {
             ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
             setsFromListSets = setsQuery.getSets(oaipmhServer);
         }
@@ -144,7 +144,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private void executeListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
         long counter = 0;
         long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
+        ProgressLogger logger = new ProgressLogger( setIdentifier, -1, logProgressInterval);
 
         String request = getRequest(oaipmhServer.getOaipmhServer(), setIdentifier);
         ListRecordsResponse response = oaipmhServer.getListRecordRequest(request);

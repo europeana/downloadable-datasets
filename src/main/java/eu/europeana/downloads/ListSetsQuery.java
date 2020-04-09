@@ -46,7 +46,7 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
     private void execute(OAIPMHServiceClient oaipmhServer, List<String> setsFromListSet) {
         long counter = 0;
         long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
+        ProgressLogger logger = new ProgressLogger("All sets", -1, logProgressInterval);
 
         String request = getRequest(oaipmhServer.getOaipmhServer());
 

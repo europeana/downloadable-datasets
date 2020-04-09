@@ -14,21 +14,25 @@ public class ProgressLogger {
 
     private static final Logger LOG = LogManager.getLogger(ProgressLogger.class);
 
+    private String setName;
     private long startTime;
     private long totalItems;
     private int logAfterSeconds;
     private long lastLogTime;
 
     /**
-     * Create a new progressLogger. This also sets the operation start Time
+     * Create a new progressLogger. This also sets the operation start time
+     * @param setName name of the set that is downloaded
      * @param totalItems total number of items that are expected to be retrieved
      * @param logAfterSeconds to prevent too much logging, only log every x seconds
      */
-    public ProgressLogger(long totalItems, int logAfterSeconds) {
+    public ProgressLogger(String setName, long totalItems, int logAfterSeconds) {
+        this.setName = setName;
         this.startTime = System.currentTimeMillis();
         this.lastLogTime = startTime;
         this.totalItems = totalItems;
         this.logAfterSeconds = logAfterSeconds;
+        LOG.debug("Create logger for {}", setName);
     }
 
     public void setTotalItems(long totalItems) {
@@ -41,19 +45,20 @@ public class ProgressLogger {
      * @param itemsDone the number of items that have been retrieved
      */
     public void logProgress(long itemsDone) {
+        LOG.debug("Check progress for {} ", setName);
         Duration d = new Duration(lastLogTime, System.currentTimeMillis());
         if (logAfterSeconds > 0 && d.getMillis() / 1000 > logAfterSeconds) {
             if (totalItems > 0) {
-                double itemsPerMS = itemsDone * 1d / (System.currentTimeMillis() - startTime);
-                if (itemsPerMS * 1000 > 1.0) {
-                    LOG.info("Retrieved {} items of {} ({} records/sec). Expected time remaining is {}", itemsDone, totalItems,
+                double itemsPerMS = itemsDone * 1D / (System.currentTimeMillis() - startTime);
+                if (itemsPerMS * 1000 > 1.5) {
+                    LOG.info("Set {} - Retrieved {} items of {} ({} records/sec). Time remaining is {}", setName, itemsDone, totalItems,
                             Math.round(itemsPerMS * 1000), getDurationText(Math.round((totalItems - itemsDone) / itemsPerMS)));
-                } else {
-                    LOG.info("Retrieved {} items of {} ({} records/min). Expected time remaining is {}", itemsDone, totalItems,
+                } else  {
+                    LOG.info("Set {} - Retrieved {} items of {} ({} records/min). Time remaining is {}", setName, itemsDone, totalItems,
                             Math.round(itemsPerMS * 1000 * 60), getDurationText(Math.round((totalItems - itemsDone) / itemsPerMS)));
                 }
             } else {
-                LOG.info("Retrieved {} items", itemsDone);
+                LOG.info("Set {} - Retrieved {} items", setName, itemsDone);
             }
             lastLogTime = System.currentTimeMillis();
         }

@@ -76,8 +76,8 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
-        if (sets.size()!= 1 && threads > 1) {
-            if(sets.isEmpty())  {
+        if (sets.size() != 1 && threads > 1) {
+            if (sets.isEmpty())  {
                 executeMultithreadListRecords(oaipmhServer, null);
              } else {
                 for (String setIdentifier : sets) {
@@ -107,7 +107,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
         long counter = 0;
         long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
+        ProgressLogger logger = new ProgressLogger(setIdentifier, -1, logProgressInterval);
 
         ListIdentifiersQuery identifiersQuery = prepareListIdentifiersQuery(setIdentifier);
         List<String> identifiers = identifiersQuery.getIdentifiers(oaipmhServer, setIdentifier);
@@ -125,7 +125,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
             if (i == threads - 1) {
                 toIndex = identifiers.size();
             }
-            tasks.add(new ListRecordsExecutor(identifiers.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+            tasks.add(new ListRecordsExecutor(setIdentifier, identifiers.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
         }
 
         try {
@@ -156,7 +156,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     private void execute(OAIPMHServiceClient oaipmhServer, String setName, List<String> identifiers) {
         long counter = 0;
         long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(-1, logProgressInterval);
+        ProgressLogger logger = new ProgressLogger(setName,-1, logProgressInterval);
 
         String request = getRequest(oaipmhServer.getOaipmhServer(), setName);
 

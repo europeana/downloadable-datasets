@@ -16,15 +16,15 @@ public class ListRecordsExecutor implements Callable<ListRecordsResult> {
     private static long loggerThreadId;
     private int logProgressInterval;
 
+    private String setName;
     private List<String> identifiers;
-
     private String metadataPrefix;
 
     private String directoryLocation;
-
     private OAIPMHServiceClient oaipmhServer;
 
-    public ListRecordsExecutor(List<String> identifiers, String metadataPrefix, String directoryLocation, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
+    public ListRecordsExecutor(String setName, List<String> identifiers, String metadataPrefix, String directoryLocation, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
+        this.setName = setName;
         this.identifiers = identifiers;
         this.metadataPrefix = metadataPrefix;
         this.directoryLocation = directoryLocation;
@@ -42,7 +42,7 @@ public class ListRecordsExecutor implements Callable<ListRecordsResult> {
         // this callable will log progress. This is to avoid too much logging from all threads.
         synchronized(this) {
             if (logger == null) {
-                logger = new ProgressLogger(identifiers.size(), logProgressInterval);
+                logger = new ProgressLogger(setName, identifiers.size(), logProgressInterval);
                 loggerThreadId = Thread.currentThread().getId();
                 LOG.debug("Created new progress logger for thread {} - {} items, logging interval {} ms",
                         loggerThreadId, identifiers.size(), logProgressInterval);
