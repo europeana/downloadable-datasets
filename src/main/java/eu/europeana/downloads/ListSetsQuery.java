@@ -29,7 +29,7 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
     }
 
     @Override
-    public String getVerbName(){ return "ListSets";
+    public String getVerbName(){ return Constants.LIST_SET_VERB;
     }
 
     @Override

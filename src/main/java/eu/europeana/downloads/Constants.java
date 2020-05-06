@@ -6,11 +6,13 @@ public class Constants {
     public static final String GET_RECORD_VERB          = "GetRecord";
     public static final String LIST_IDENTIFIERS_VERB    = "ListIdentifiers";
     public static final String LIST_RECORDS_VERB        = "ListRecords";
+    public static final String LIST_SET_VERB            = "ListSets";
+
 
     // Zip constants
     public static final String ZIP_EXTENSION            = ".zip";
     public static final String PATH_SEPERATOR           = "/";
-    public static final String EXTENSION                = ".xml";
+    public static final String XML_EXTENSION                = ".xml";
     public static final String BASE_URL                 = "http://data.europeana.eu/item/";
 
     // constants for parsing XML Response
@@ -30,4 +32,7 @@ public class Constants {
     //Boolean Values
     public static final String TRUE                     = "true";
     public static final String FALSE                    = "false";
+
+    //CRC Constants
+    public static final String CRC_EXTENSION            = ".crc";
 }
