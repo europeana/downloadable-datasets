@@ -57,7 +57,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
                 errors++;
                 // if there are too many errors, just abort
                 if (errors > MAX_ERRORS_PER_THREAD) {
-                    LOG.error("Terminating GetRecord thread {} because too many errors occurred", Thread.currentThread().getId());
+                    LOG.error("Terminating ListRecords thread {} because too many errors occurred", Thread.currentThread().getId());
                     break;
                 }
             }
