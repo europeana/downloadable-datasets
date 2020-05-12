@@ -3,3 +3,4 @@
 /*.iml
 **/downloads.user.properties
 
+src/main/resources/downloads-user.properties

@@ -26,8 +26,6 @@ import java.util.zip.ZipOutputStream;
 public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     private static final Logger LOG = LogManager.getLogger(ListRecordsQuery.class);
-    private static final String ZIP_EXTENSION = ".zip";
-    private static final String PATH_SEPERATOR = "/";
 
     @Value("${metadata-prefix}")
     private String metadataPrefix;
@@ -79,7 +77,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @Override
     public String getVerbName() {
-        return "ListRecords";
+        return Constants.LIST_RECORDS_VERB;
     }
 
     @Override
@@ -149,7 +147,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         String request = getRequest(oaipmhServer.getOaipmhServer(), setIdentifier);
         ListRecordsResponse response = oaipmhServer.getListRecordRequest(request);
         ListRecords responseObject = response.getListRecords();
-        try (final ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(new File(directoryLocation + PATH_SEPERATOR + setIdentifier + ZIP_EXTENSION)));
+        String zipName = directoryLocation + Constants.PATH_SEPERATOR + setIdentifier + Constants.ZIP_EXTENSION ;
+        try (final ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(new File(zipName)));
              OutputStreamWriter writer = new OutputStreamWriter(zout)) {
 
               //writing in ZIP
@@ -181,10 +180,12 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                     logger.logProgress(counter);
                 }
             }
+
         } catch (IOException e) {
             LOG.error("Error creating outputStreams ", e);
         }
-
+        //create CRC file for the Zip
+        ZipUtility.createCRCFile(zipName);
 
         LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
                 ". Harvested " + counter + " records.");
