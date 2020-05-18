@@ -12,7 +12,7 @@ public class Constants {
     // Zip constants
     public static final String ZIP_EXTENSION            = ".zip";
     public static final String PATH_SEPERATOR           = "/";
-    public static final String XML_EXTENSION                = ".xml";
+    public static final String XML_EXTENSION            = ".xml";
     public static final String BASE_URL                 = "http://data.europeana.eu/item/";
 
     // constants for parsing XML Response
@@ -33,6 +33,6 @@ public class Constants {
     public static final String TRUE                     = "true";
     public static final String FALSE                    = "false";
 
-    //CRC Constants
-    public static final String CRC_EXTENSION            = ".crc";
+    //MD5 Sum Constants
+    public static final String MD5_EXTENSION            = ".md5sum";
 }
