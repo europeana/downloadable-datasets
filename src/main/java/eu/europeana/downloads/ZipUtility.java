@@ -51,7 +51,7 @@ public class ZipUtility {
         }
     }
 
-    public static String getMD5Sum(String file) {
+    private static String getMD5Sum(String file) {
         MessageDigest digest;
         String checksum = null;
         try(InputStream is = new FileInputStream(new File(file))) {
