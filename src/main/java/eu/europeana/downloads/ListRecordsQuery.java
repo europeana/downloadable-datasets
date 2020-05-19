@@ -42,6 +42,9 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Value("${sets-folder}")
     private String directoryLocation;
 
+    @Value("${file-format}")
+    private String fileFormat;
+
     @Value("${harvest-threads}")
     private int threads;
 
@@ -52,10 +55,11 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     public ListRecordsQuery() {
     }
 
-    public ListRecordsQuery(String metadataPrefix, String set, String directoryLocation, int logProgressInterval) {
+    public ListRecordsQuery(String metadataPrefix, String set, String directoryLocation, String fileFormat, int logProgressInterval) {
         this.metadataPrefix = metadataPrefix;
         this.set = set;
         this.directoryLocation = directoryLocation;
+        this.fileFormat = fileFormat;
         this.logProgressInterval = logProgressInterval;
     }
 
@@ -85,7 +89,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (sets.size() != 1 && threads > 1) {
             executeMultithreadListRecords(oaipmhServer, sets);
         } else {
-            executeListRecords(oaipmhServer, set);
+            executeListRecords(oaipmhServer, set, fileFormat);
         }
     }
 
@@ -112,7 +116,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             if (i == threads - 1) {
                 toIndex = setsFromListSets.size();
             }
-            tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+            tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, fileFormat, oaipmhServer, logProgressInterval));
         }
         try {
             // invoke a separate thread for each provider
@@ -139,7 +143,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 ". Harvested " + sets.size() + " sets.");
     }
 
-    private void executeListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
+    private void executeListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier, String fileFormat) {
         long counter = 0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger( setIdentifier, -1, logProgressInterval);
@@ -153,7 +157,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
               //writing in ZIP
               for(Record record : responseObject.getRecords()) {
-                    ZipUtility.writeInZip(zout, writer, record);
+                    ZipUtility.writeInZip(zout, writer, record, fileFormat);
               }
              if (responseObject != null) {
                 counter += responseObject.getRecords().size();
@@ -170,7 +174,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                     responseObject = response.getListRecords();
                         //writing in ZIP
                         for (Record record : responseObject.getRecords()) {
-                            ZipUtility.writeInZip(zout, writer, record);
+                            ZipUtility.writeInZip(zout, writer, record, fileFormat);
                     }
                     if (responseObject == null) {
 
