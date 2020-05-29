@@ -184,8 +184,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         } catch (IOException e) {
             LOG.error("Error creating outputStreams ", e);
         }
-        //create CRC file for the Zip
-        ZipUtility.createCRCFile(zipName);
+        //create MD5Sum file for the Zip
+        ZipUtility.createMD5SumFile(zipName);
 
         LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
                 ". Harvested " + counter + " records.");
