@@ -8,10 +8,6 @@ import eu.europeana.oaipmh.model.response.GetRecordResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.zip.ZipOutputStream;
 
@@ -21,18 +17,18 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
     private static final Logger LOG = LogManager.getLogger(GetRecordQuery.class);
 
     private String metadataPrefix;
-
-    private String directoryLocation;
-
     private String identifier;
+    private ZipOutputStream zipOutputStream;
+    private OutputStreamWriter writer;
 
     public GetRecordQuery() {
     }
 
-    public GetRecordQuery(String metadataPrefix, String identifier, String directoryLocation) {
+    public GetRecordQuery(String metadataPrefix, String identifier, ZipOutputStream zipOutputStream, OutputStreamWriter writer) {
         this.metadataPrefix = metadataPrefix;
         this.identifier = identifier;
-        this.directoryLocation = directoryLocation;
+        this.zipOutputStream = zipOutputStream;
+        this.writer = writer;
     }
 
     @Override
@@ -42,18 +38,16 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
-        execute(oaipmhServer, identifier);
+        execute(oaipmhServer, identifier, zipOutputStream,writer);
     }
 
-    private void execute(OAIPMHServiceClient oaipmhServer, String currentIdentifier) {
+    private void execute(OAIPMHServiceClient oaipmhServer, String currentIdentifier, ZipOutputStream zout, OutputStreamWriter writer) {
         long start = System.currentTimeMillis();
 
         String request = getRequest(oaipmhServer.getOaipmhServer(), currentIdentifier);
         GetRecordResponse response = oaipmhServer.getGetRecordRequest(request);
         GetRecord responseObject = response.getGetRecord();
-        try (final ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(
-                new File(directoryLocation + Constants.PATH_SEPERATOR + ZipUtility.getDirectoryName(currentIdentifier) + Constants.ZIP_EXTENSION)));
-             OutputStreamWriter writer = new OutputStreamWriter(zout)) {
+        try {
             if (responseObject != null) {
                 Record record = responseObject.getRecord();
                 if (record == null) {
@@ -71,7 +65,7 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
                 ZipUtility.writeInZip(zout, writer, record);
 
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.error("Error creating outputStreams ", e);
         }
 

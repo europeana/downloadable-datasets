@@ -34,7 +34,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
     }
 
     @Override
-    public ListRecordsResult call() throws Exception {
+    public ListRecordsResult call() {
         int errors = 0;
         long counter = 0;
         long start = System.currentTimeMillis();

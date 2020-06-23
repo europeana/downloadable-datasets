@@ -11,11 +11,13 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.*;
+import java.util.zip.ZipOutputStream;
 
 @Component
 public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
@@ -77,14 +79,9 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
         if (sets.size() != 1 && threads > 1) {
-            if (sets.isEmpty())  {
-                executeMultithreadListRecords(oaipmhServer, null);
-             } else {
-                for (String setIdentifier : sets) {
-                    executeMultithreadListRecords(oaipmhServer, setIdentifier);
-                }
+                executeMultithreadListRecords(oaipmhServer, sets);
             }
-        } else {
+         else {
             executeSingleThreadListRecord(oaipmhServer, set);
         }
     }
@@ -97,37 +94,46 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
     private void executeSingleThreadListRecord(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
         List<String> identifiers = getIdentifiers(oaipmhServer, setIdentifier);
-        for(String identifier : identifiers) {
-            new GetRecordQuery(metadataPrefix, identifier, directoryLocation).execute(oaipmhServer);
+        String zipName =  directoryLocation + Constants.PATH_SEPERATOR + setIdentifier + Constants.ZIP_EXTENSION;
+        try( ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(new File(zipName)));
+             OutputStreamWriter writer = new OutputStreamWriter(zout) ) {
+            for (String identifier : identifiers) {
+               new GetRecordQuery(metadataPrefix, identifier, zout, writer).execute(oaipmhServer);
+            }
+        } catch (IOException e) {
+           LOG.error("Error creating zip file ", e);
         }
+        //create MD5Sum file for the Zip
+        ZipUtility.createMD5SumFile(zipName);
     }
 
-    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
+    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {
         initThreadPool();
+        List<String> setsFromListSets = sets;
 
         long counter = 0;
         long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(setIdentifier, -1, logProgressInterval);
+        ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
 
-        ListIdentifiersQuery identifiersQuery = prepareListIdentifiersQuery(setIdentifier);
-        List<String> identifiers = identifiersQuery.getIdentifiers(oaipmhServer, setIdentifier);
-        logger.setTotalItems(identifiers.size());
-
+        // get all the sets in a list
+        if (sets.isEmpty()) {
+            ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
+            setsFromListSets = setsQuery.getSets(oaipmhServer);
+        }
+        LOG.info(" {} Sets to be executed by {} threads", setsFromListSets.size(), threads);
         List<Future<ListRecordsResult>> results = null;
         List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
 
-        int perThread = identifiers.size() / threads;
+        int perThread = setsFromListSets.size() / threads;
 
-        // create task for each resource provider
         for (int i = 0; i < threads; i++) {
             int fromIndex = i * perThread;
             int toIndex = (i + 1) * perThread;
             if (i == threads - 1) {
-                toIndex = identifiers.size();
+                toIndex = setsFromListSets.size();
             }
-            tasks.add(new ListRecordsExecutor(setIdentifier, identifiers.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+            tasks.add(new ListIdentifierExecutor(setsFromListSets.subList(fromIndex, toIndex), from, metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
         }
-
         try {
             // invoke a separate thread for each provider
             results = threadPool.invokeAll(tasks);
@@ -149,8 +155,8 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
         clean();
 
-        LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + identifiers.size() + " identifiers.");
+        LOG.info("ListIdentifier for all sets executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
+                ". Harvested " + sets.size() + " sets.");
     }
 
     private void execute(OAIPMHServiceClient oaipmhServer, String setName, List<String> identifiers) {
@@ -187,7 +193,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
         }
 
         LOG.info("ListIdentifiers for set " + setName + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + counter + " identifiers.");
+                ". Retrieved " + counter + " identifiers.");
     }
 
     /**
@@ -227,12 +233,6 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
         }
 
         return sb.toString();
-    }
-
-    private ListIdentifiersQuery prepareListIdentifiersQuery(String setIdentifier) {
-        ListIdentifiersQuery query = new ListIdentifiersQuery(metadataPrefix, from, setIdentifier, 30);
-        query.initSets();
-        return query;
     }
 
     @PreDestroy
