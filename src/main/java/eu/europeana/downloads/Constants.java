@@ -12,7 +12,7 @@ public class Constants {
     // Zip constants
     public static final String ZIP_EXTENSION            = ".zip";
     public static final String PATH_SEPERATOR           = "/";
-    public static final String XML_EXTENSION                = ".xml";
+    public static final String XML_EXTENSION            = ".xml";
     public static final String TTL_EXTENSION            = ".ttl";
     public static final String RDF_XML                  = "RDF/XML";
 
@@ -42,5 +42,4 @@ public class Constants {
     // File format
     public static final String XML_FILE                 = "XML";
     public static final String TTL_FILE                 = "TTL";
-
 }
