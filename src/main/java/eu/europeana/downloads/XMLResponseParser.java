@@ -26,6 +26,10 @@ public class XMLResponseParser {
 
     private static final Logger LOG = LogManager.getLogger(XMLResponseParser.class);
 
+    private XMLResponseParser() {
+        //adding a private constructor to hide implicit public one
+    }
+
     public static GetRecordResponse parseGetRecordResponse(String responseAsString) {
         GetRecordResponse recordResponse = new GetRecordResponse();
         XMLInputFactory factory = XMLInputFactory.newInstance();

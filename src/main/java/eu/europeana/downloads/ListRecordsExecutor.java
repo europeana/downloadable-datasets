@@ -21,13 +21,15 @@ public class ListRecordsExecutor implements Callable<ListRecordsResult> {
     private String metadataPrefix;
 
     private String directoryLocation;
+    private String fileFormat;
     private OAIPMHServiceClient oaipmhServer;
 
-    public ListRecordsExecutor(String setName, List<String> identifiers, String metadataPrefix, String directoryLocation, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
+    public ListRecordsExecutor(String setName, List<String> identifiers, String metadataPrefix, String directoryLocation, String fileFormat, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
         this.setName = setName;
         this.identifiers = identifiers;
         this.metadataPrefix = metadataPrefix;
         this.directoryLocation = directoryLocation;
+        this.fileFormat = fileFormat;
         this.oaipmhServer = oaipmhServer;
         this.logProgressInterval = logProgressInterval;
     }
@@ -51,7 +53,7 @@ public class ListRecordsExecutor implements Callable<ListRecordsResult> {
 
         for (String identifier : identifiers) {
             try {
-                  new GetRecordQuery(metadataPrefix, identifier, directoryLocation).execute(oaipmhServer);
+                  new GetRecordQuery(metadataPrefix, identifier, directoryLocation, fileFormat).execute(oaipmhServer);
             } catch (Exception e) {
                 LOG.error("Error retrieving record {}", identifier, e);
                 errors++;

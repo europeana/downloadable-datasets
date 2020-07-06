@@ -24,15 +24,18 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
 
     private String directoryLocation;
 
+    private String fileFormat;
+
     private String identifier;
 
     public GetRecordQuery() {
     }
 
-    public GetRecordQuery(String metadataPrefix, String identifier, String directoryLocation) {
+    public GetRecordQuery(String metadataPrefix, String identifier, String directoryLocation, String fileFormat) {
         this.metadataPrefix = metadataPrefix;
         this.identifier = identifier;
         this.directoryLocation = directoryLocation;
+        this.fileFormat = fileFormat;
     }
 
     @Override
@@ -68,7 +71,7 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
                     }
                 }
                 //write in Zip
-                ZipUtility.writeInZip(zout, writer, record);
+                ZipUtility.writeInZip(zout, writer, record, fileFormat);
 
             }
         } catch (IOException e) {

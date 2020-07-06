@@ -40,6 +40,9 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     @Value("${sets-folder}")
     private String directoryLocation;
 
+    @Value("${file-format}")
+    private String fileFormat;
+
     private ExecutorService threadPool;
 
     private List<String> sets = new ArrayList<>();
@@ -98,7 +101,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     private void executeSingleThreadListRecord(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
         List<String> identifiers = getIdentifiers(oaipmhServer, setIdentifier);
         for(String identifier : identifiers) {
-            new GetRecordQuery(metadataPrefix, identifier, directoryLocation).execute(oaipmhServer);
+            new GetRecordQuery(metadataPrefix, identifier, directoryLocation, fileFormat).execute(oaipmhServer);
         }
     }
 
@@ -125,7 +128,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
             if (i == threads - 1) {
                 toIndex = identifiers.size();
             }
-            tasks.add(new ListRecordsExecutor(setIdentifier, identifiers.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+            tasks.add(new ListRecordsExecutor(setIdentifier, identifiers.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, fileFormat, oaipmhServer, logProgressInterval));
         }
 
         try {

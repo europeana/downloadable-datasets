@@ -20,20 +20,41 @@ public class ZipUtility {
         //adding a private constructor to hide implicit public one
     }
 
-    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record record) {
+    /**
+     *  method to write in the zip
+     */
+    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record record, String fileFormat) {
         try {
-            zout.putNextEntry(new ZipEntry(getEntryName(record)));
-            writer.write(record.getMetadata().getMetadata());
+            zout.putNextEntry(new ZipEntry(getEntryName(record, fileFormat)));
+            writer.write(dataToWriteInZip(record.getMetadata().getMetadata(), fileFormat));
             writer.flush();
             zout.closeEntry();
         } catch (IOException e) {
             LOG.error("Error writing the zip entry", e);
         }
-
     }
 
-    private static String getEntryName(Record record) {
+    /**
+     * converts the Record metadata into turtle if fileFormat is TTL.
+     * Otherwise the return the default metadata
+     * @return metadata
+     */
+    private static String dataToWriteInZip(String metadata, String fileFormat) {
+        if (StringUtils.equals(fileFormat, Constants.TTL_FILE)) {
+            return TurtleResponseParser.generateTurtle(metadata);
+        }
+        return metadata;
+    }
+
+    /**
+     * the name of the file depending upon the extension provided
+     * @return String
+     */
+    private static String getEntryName(Record record, String fileExtension) {
         String id = record.getHeader().getIdentifier();
+        if (StringUtils.equals(fileExtension, Constants.TTL_FILE)) {
+            return StringUtils.substringAfterLast(id, "/") + Constants.TTL_EXTENSION;
+        }
         return StringUtils.substringAfterLast(id, "/") + Constants.XML_EXTENSION;
     }
 
