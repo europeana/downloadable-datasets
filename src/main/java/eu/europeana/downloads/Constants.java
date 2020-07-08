@@ -36,8 +36,8 @@ public class Constants {
     public static final String TRUE                     = "true";
     public static final String FALSE                    = "false";
 
-    // CRC Constants
-    public static final String CRC_EXTENSION            = ".crc";
+    // MD5 Constants
+    public static final String MD5_EXTENSION            = ".md5sum";
 
     // File format
     public static final String XML_FILE                 = "XML";
