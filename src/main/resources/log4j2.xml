@@ -29,5 +29,6 @@
         <Root level="INFO" additivity="false">
             <appender-ref ref="Console" />
         </Root>
+        <Logger name="org.apache.jena.riot" level="ERROR" />
     </Loggers>
 </Configuration>

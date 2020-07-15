@@ -42,4 +42,11 @@ public class Constants {
     // File format
     public static final String XML_FILE                 = "XML";
     public static final String TTL_FILE                 = "TTL";
+
+    // CSV File Constants
+    public static final String CSV_SEPARATOR            = ",";
+    public static final String CSV_HEADER               = "Failed Sets";
+    public static final String CSV_FILE                 = "FailedSetsReport";
+    public static final String CSV_EXTENSION            = ".csv";
+    public static final String REPORT_DATE_FORMAT       = "dd-MM-yyyy";
 }

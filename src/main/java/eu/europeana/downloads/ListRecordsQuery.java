@@ -7,7 +7,9 @@ import eu.europeana.oaipmh.service.exception.OaiPmhException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -52,6 +54,12 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     private ExecutorService threadPool;
 
+    @Autowired
+    private MailService  emailService;
+
+    @Autowired
+    private SimpleMailMessage downloadsReportMail;
+
     public ListRecordsQuery() {
     }
 
@@ -87,13 +95,20 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
         if (sets.size() != 1 && threads > 1) {
-            executeMultithreadListRecords(oaipmhServer, sets);
+            DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets);
+            emailService.sendSimpleMessageUsingTemplate("Download Run Status Report",
+                    downloadsReportMail,
+                    String.valueOf(status.getNoOfSets()),
+                    String.valueOf(status.getStartTime()),
+                    status.getTimeElapsed(),
+                    String.valueOf(status.getSetsHarvested()));
         } else {
             executeListRecords(oaipmhServer, set, fileFormat);
         }
+
     }
 
-    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {
+    private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {
         initThreadPool();
         long counter = 0;
         long start = System.currentTimeMillis();
@@ -103,6 +118,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
             setsFromListSets = setsQuery.getSets(oaipmhServer);
         }
+        DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
         logger.setTotalItems(setsFromListSets.size());
         List<Future<ListRecordsResult>> results = null;
         List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
@@ -121,15 +137,21 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         try {
             // invoke a separate thread for each provider
             results = threadPool.invokeAll(tasks);
-
+            List<String> setsDownloaded = new ArrayList<>();
             ListRecordsResult listRecordsResult;
             for (Future<ListRecordsResult> result : results) {
                 listRecordsResult = result.get();
                 LOG.info("Executor finished with {} errors in {} sec.",
                         listRecordsResult.getErrors(), listRecordsResult.getTime());
                 counter += perThread;
+                // get the successfully downloaded sets
+                if(StringUtils.isNotEmpty(listRecordsResult.getSetsDownloaded())) {
+                    setsDownloaded.addAll(Arrays.asList(listRecordsResult.getSetsDownloaded().split("\\s*,\\s*")));
+                }
                 logger.logProgress(counter);
             }
+            status.setSetsHarvested(setsDownloaded.size());
+            getFailedSets(sets, setsDownloaded,directoryLocation);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Interrupted.", e);
@@ -138,9 +160,10 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
 
         clean();
-
-        LOG.info("ListRecords for all sets executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + sets.size() + " sets.");
+        String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
+        status.setTimeElapsed(timeElapsed);
+        LOG.info("ListRecords for all {} sets executed in {}. Harvested {} sets." ,status.getNoOfSets(), timeElapsed, status.getSetsHarvested() );
+        return  status;
     }
 
     private void executeListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier, String fileFormat) {
@@ -191,8 +214,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         //create MD5Sum file for the Zip
         ZipUtility.createMD5SumFile(zipName);
 
-        LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + counter + " records.");
+        LOG.info("ListRecords for set {} executed in {}. Harvested {} records.", setIdentifier,
+                ProgressLogger.getDurationText(System.currentTimeMillis() - start), counter);
     }
 
     private String getResumptionRequest(String oaipmhServer, String resumptionToken) {
@@ -211,6 +234,13 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             sb.append(String.format(SET_PARAMETER, setIdentifier));
         }
         return sb.toString();
+    }
+
+    // gets the value of failed or missing sets or partially downloaded sets. Writes the data in .csv file
+    // It will easier to identify the failed sets after a run
+    private static void getFailedSets(List<String> sets, List<String> setsDownloaded, String directoryLocation) {
+        sets.removeAll(setsDownloaded);
+        CSVFile.writeInCsv(sets,directoryLocation);
     }
 
     @PreDestroy

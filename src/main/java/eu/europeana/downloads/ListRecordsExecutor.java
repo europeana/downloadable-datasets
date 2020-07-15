@@ -69,7 +69,7 @@ public class ListRecordsExecutor implements Callable<ListRecordsResult> {
                 logger.logProgress(counter);
             }
         }
-        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, errors);
+        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, "", errors);
     }
 
 }
