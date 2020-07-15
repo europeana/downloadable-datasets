@@ -18,11 +18,9 @@ import java.util.ListIterator;
 import java.util.concurrent.*;
 
 /**
- * This is an alternative approach. Currently we are not using it.
- * @deprecated since 15 July 2020
+ * @deprecated  This is an alternative approach. Not used currently
  */
-
-@Deprecated
+@Deprecated (since = "15-July-2020")
 @Component
 public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
@@ -177,8 +175,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
         clean();
 
-        LOG.info("ListIdentifier for all sets executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + sets.size() + " sets.");
+        LOG.info("ListIdentifier for all sets executed in {}. Harvested {} sets ", ProgressLogger.getDurationText(System.currentTimeMillis() - start), sets.size());
     }
 
     private void execute(OAIPMHServiceClient oaipmhServer, String setName, List<String> identifiers) {
@@ -214,8 +211,8 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
             }
         }
 
-        LOG.info("ListIdentifiers for set " + setName + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Retrieved " + counter + " identifiers.");
+        LOG.info("ListIdentifiers for set {} executed in {}. Retrieved {} identifiers", setName,
+                ProgressLogger.getDurationText(System.currentTimeMillis() - start) ,counter);
     }
 
     /**

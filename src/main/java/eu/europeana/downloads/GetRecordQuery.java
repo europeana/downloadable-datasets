@@ -12,10 +12,9 @@ import java.io.OutputStreamWriter;
 import java.util.zip.ZipOutputStream;
 
 /**
- * This is an alternative approach. Currently we are not using it.
- * @deprecated since 15 July 2020
+ * @deprecated  This is an alternative approach. Not used currently
  */
-@Deprecated
+@Deprecated (since = "15-July-2020")
 @Component
 public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
 

@@ -12,10 +12,9 @@ import java.util.concurrent.Callable;
 import java.util.zip.ZipOutputStream;
 
 /**
- * This is an alternative approach. Currently we are not using it.
- * @deprecated since 15 July 2020
+ * @deprecated  This is an alternative approach. Not used currently
  */
-@Deprecated
+@Deprecated (since = "15-July-2020")
 public class ListIdentifierExecutor implements Callable<ListRecordsResult> {
 
     private static final Logger LOG = LogManager.getLogger(ListIdentifierExecutor.class);
