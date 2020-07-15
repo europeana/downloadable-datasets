@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 import java.io.OutputStreamWriter;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * This is an alternative approach. Currently we are not using it.
+ * @deprecated since 15 July 2020
+ */
+@Deprecated
 @Component
 public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
 
@@ -47,26 +52,21 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
         String request = getRequest(oaipmhServer.getOaipmhServer(), currentIdentifier);
         GetRecordResponse response = oaipmhServer.getGetRecordRequest(request);
         GetRecord responseObject = response.getGetRecord();
-        try {
-            if (responseObject != null) {
-                Record record = responseObject.getRecord();
-                if (record == null) {
-                    LOG.error("No record in GetRecordResponse for identifier {}", currentIdentifier);
-                    return;
-                }
-                Header header = record.getHeader();
-                if (header != null && currentIdentifier.equals(header.getIdentifier())) {
-                    RDFMetadata metadata = record.getMetadata();
-                    if (metadata == null || metadata.getMetadata() == null || metadata.getMetadata().isEmpty()) {
-                        LOG.error("Empty metadata for identifier {}", currentIdentifier);
-                    }
-                }
-                //write in Zip
-                ZipUtility.writeInZip(zout, writer, record);
-
+        if (responseObject != null) {
+            Record record = responseObject.getRecord();
+            if (record == null) {
+                LOG.error("No record in GetRecordResponse for identifier {}", currentIdentifier);
+                return;
             }
-        } catch (Exception e) {
-            LOG.error("Error creating outputStreams ", e);
+            Header header = record.getHeader();
+            if (header != null && currentIdentifier.equals(header.getIdentifier())) {
+                RDFMetadata metadata = record.getMetadata();
+                if (metadata == null || metadata.getMetadata() == null || metadata.getMetadata().isEmpty()) {
+                    LOG.error("Empty metadata for identifier {}", currentIdentifier);
+                }
+            }
+            //write in Zip
+            ZipUtility.writeInZip(zout, writer, record);
         }
 
         LOG.info("GetRecord for identifier {} executed in {} ms", currentIdentifier, (System.currentTimeMillis() - start));

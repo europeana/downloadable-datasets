@@ -11,6 +11,11 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * This is an alternative approach. Currently we are not using it.
+ * @deprecated since 15 July 2020
+ */
+@Deprecated
 public class ListIdentifierExecutor implements Callable<ListRecordsResult> {
 
     private static final Logger LOG = LogManager.getLogger(ListIdentifierExecutor.class);
@@ -77,7 +82,7 @@ public class ListIdentifierExecutor implements Callable<ListRecordsResult> {
     }
 
     /**
-     * Method to harvest identifiers retreived for each set. Creates a zip folder with the setname
+     * Method to download the records. Creates a zip folder with the setname
      * in the specified location and generates md5 sum file for the zip.
      *
      * @param identifiers list of identifiers

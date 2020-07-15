@@ -11,14 +11,18 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.*;
-import java.util.zip.ZipOutputStream;
 
+/**
+ * This is an alternative approach. Currently we are not using it.
+ * @deprecated since 15 July 2020
+ */
+
+@Deprecated
 @Component
 public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
@@ -65,7 +69,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
     private void initThreadPool() {
         // init thread pool
-        if (threads < 1) {
+        if (threads < 1 || sets.size() == 1) {
             threads = 1;
         }
         threadPool = Executors
@@ -93,18 +97,36 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     private void executeSingleThreadListRecord(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
-        List<String> identifiers = getIdentifiers(oaipmhServer, setIdentifier);
-        String zipName =  directoryLocation + Constants.PATH_SEPERATOR + setIdentifier + Constants.ZIP_EXTENSION;
-        try( ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(new File(zipName)));
-             OutputStreamWriter writer = new OutputStreamWriter(zout) ) {
-            for (String identifier : identifiers) {
-               new GetRecordQuery(metadataPrefix, identifier, zout, writer).execute(oaipmhServer);
+        initThreadPool();
+        long start = System.currentTimeMillis();
+        ProgressLogger logger = new ProgressLogger("Single set", 1, logProgressInterval);
+
+        LOG.info(" {} Set to be executed by {} threads", setIdentifier, threads);
+
+        List<Future<ListRecordsResult>> results = null;
+        List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
+        tasks.add(new ListIdentifierExecutor(sets, from, metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+        try {
+            // invoke a separate thread for each provider
+            results = threadPool.invokeAll(tasks);
+
+            ListRecordsResult listRecordsResult;
+            for (Future<ListRecordsResult> result : results) {
+                listRecordsResult = result.get();
+                LOG.info("Executor finished with {} errors in {} sec.",
+                        listRecordsResult.getErrors(), listRecordsResult.getTime());
+                logger.logProgress(1);
             }
-        } catch (IOException e) {
-           LOG.error("Error creating zip file ", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("Interrupted.", e);
+        } catch (ExecutionException e) {
+            LOG.error("Problem with task thread execution.", e);
         }
-        //create MD5Sum file for the Zip
-        ZipUtility.createMD5SumFile(zipName);
+
+        clean();
+        LOG.info("ListIdentifier for set {} executed in {}. Harvested {} sets. ",setIdentifier,
+                ProgressLogger.getDurationText(System.currentTimeMillis() - start), sets.size());
     }
 
     private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {
