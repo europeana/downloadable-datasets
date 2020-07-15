@@ -7,9 +7,9 @@ public class ListRecordsResult {
     // execution time
     private float time;
 
-    ListRecordsResult(float time, String setsSuccess, int errors) {
+    ListRecordsResult(float time, String setsDownloaded, int errors) {
         this.time = time;
-        this.setsDownloaded = setsSuccess;
+        this.setsDownloaded = setsDownloaded;
         this.errors = errors;
     }
 
