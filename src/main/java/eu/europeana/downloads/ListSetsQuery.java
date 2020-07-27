@@ -18,9 +18,6 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
     @Value("${log-progress-interval}")
     private Integer logProgressInterval;
 
-    @Value("${metadata-prefix}")
-    private String metadataPrefix;
-
     public ListSetsQuery() {
     }
 
@@ -34,47 +31,43 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
-        execute(oaipmhServer, null);
+        execute(oaipmhServer, null, null, null);
     }
 
-    public List<String> getSets(OAIPMHServiceClient oaipmhServer) {
+    public List<String> getSets(OAIPMHServiceClient oaipmhServer, String from, String until) {
         List<String> setsFromListSets = new ArrayList<>();
-        execute(oaipmhServer, setsFromListSets );
+        execute(oaipmhServer, setsFromListSets, from , until);
         return setsFromListSets;
     }
 
-    private void execute(OAIPMHServiceClient oaipmhServer, List<String> setsFromListSet) {
+    private void execute(OAIPMHServiceClient oaipmhServer, List<String> setsFromListSet, String from, String until) {
         long counter = 0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger("All sets", -1, logProgressInterval);
-
-        String request = getRequest(oaipmhServer.getOaipmhServer());
-
+        String request = getRequest(oaipmhServer.getOaipmhServer(), from , until);
         ListSetsResponse response = (ListSetsResponse) oaipmhServer.makeRequest(request, ListSetsResponse.class);
-        ListSets responseObject = response.getListSets();
+            ListSets responseObject = response.getListSets();
+            if (responseObject != null) {
+                    counter += responseObject.getSets().size();
+                    if (responseObject.getResumptionToken() != null) {
+                        logger.setTotalItems(responseObject.getResumptionToken().getCompleteListSize());
+                    } else {
+                        logger.setTotalItems(responseObject.getSets().size());
+                    }
+                    collectSets(responseObject.getSets(), setsFromListSet);
 
-        if (responseObject != null) {
-            counter += responseObject.getSets().size();
-            if (responseObject.getResumptionToken() != null) {
-                logger.setTotalItems(responseObject.getResumptionToken().getCompleteListSize());
-            } else {
-                logger.setTotalItems(responseObject.getSets().size());
+                    while (responseObject.getResumptionToken() != null) {
+                        request = getResumptionRequest(oaipmhServer.getOaipmhServer(), responseObject.getResumptionToken().getValue());
+                        response = (ListSetsResponse) oaipmhServer.makeRequest(request, ListSetsResponse.class);
+                        responseObject = response.getListSets();
+                        if (responseObject == null) {
+                            break;
+                        }
+                        counter += responseObject.getSets().size();
+                        logger.logProgress(counter);
+                        collectSets(responseObject.getSets(), setsFromListSet);
+                    }
             }
-             collectSets(responseObject.getSets(), setsFromListSet);
-
-            while (responseObject.getResumptionToken() != null) {
-                request = getResumptionRequest(oaipmhServer.getOaipmhServer(), responseObject.getResumptionToken().getValue());
-                response = (ListSetsResponse) oaipmhServer.makeRequest(request, ListSetsResponse.class);
-                responseObject = response.getListSets();
-                if (responseObject == null) {
-                    break;
-                }
-                counter += responseObject.getSets().size();
-                logger.logProgress(counter);
-                collectSets(responseObject.getSets(), setsFromListSet);
-            }
-        }
-
         LOG.info("ListSet  executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
                 ". Harvested " + counter + " sets.");
     }
@@ -92,9 +85,15 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
                 String.format(RESUMPTION_TOKEN_PARAMETER, resumptionToken);
     }
 
-    private String getRequest(String oaipmhServer) {
+    private String getRequest(String oaipmhServer, String from, String until) {
         StringBuilder sb = new StringBuilder();
         sb.append(getBaseRequest(oaipmhServer, getVerbName()));
+        if (from != null && !from.isEmpty()) {
+            sb.append(String.format(FROM_PARAMETER, from));
+        }
+        if (until != null && !until.isEmpty()) {
+            sb.append(String.format(UNTIL_PARAMETER, until));
+        }
         return sb.toString();
     }
 }

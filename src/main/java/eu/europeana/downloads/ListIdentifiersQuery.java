@@ -141,7 +141,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
         // get all the sets in a list
         if (sets.isEmpty()) {
             ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
-            setsFromListSets = setsQuery.getSets(oaipmhServer);
+            setsFromListSets = setsQuery.getSets(oaipmhServer, null, null);
         }
         LOG.info(" {} Sets to be executed by {} threads", setsFromListSets.size(), threads);
         List<Future<ListRecordsResult>> results = null;
