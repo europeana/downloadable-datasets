@@ -101,7 +101,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (sets.isEmpty()) {
             setsFromListSets = getSetsFromListSet(oaipmhServer, setsFromListSets, lastHarvestDate);
         }
-
         if (! setsFromListSets.isEmpty()) {
             logger.setTotalItems(setsFromListSets.size());
             List<Future<ListRecordsResult>> results = null;
@@ -140,6 +139,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // store the new harvest start date in the file
         // Currently not changing the lastHarvestDate if failed-sets or manually added sets are running
           if(sets.isEmpty()) {
+              LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
               SetsUtility.writeNewHarvestDate(directoryLocation, start);
           }
             clean();
@@ -172,7 +172,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 SetsUtility.deleteDataset(setsToBeDeleted, directoryLocation);
             }
             //get the updated or newly added datasets
-            setsFromListSets = setsQuery.getSets(oaipmhServer, lastHarvestDate, SetsUtility.getDate());
+            setsFromListSets = setsQuery.getSets(oaipmhServer, lastHarvestDate, null);
             LOG.info("Updated or newly created datasets count is {} ", setsFromListSets.size());
         }
         return setsFromListSets;
