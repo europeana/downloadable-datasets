@@ -96,6 +96,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
         if (sets.size() != 1 && threads > 1) {
             DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets);
+            LOG.info("Sending email ");
             emailService.sendSimpleMessageUsingTemplate("Download Run Status Report",
                     downloadsReportMail,
                     String.valueOf(status.getNoOfSets()),
