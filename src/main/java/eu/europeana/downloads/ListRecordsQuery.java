@@ -12,13 +12,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.zip.ZipOutputStream;
 
@@ -48,6 +43,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Value("${harvest-threads}")
     private int threads;
 
+    private String lastHarvestDate;
+
     private List<String> sets = new ArrayList<>();
 
     private ExecutorService threadPool;
@@ -65,6 +62,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @PostConstruct
     public final void initSets() {
+        lastHarvestDate = SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR + Constants.HARVEST_DATE_FILENAME);
         if (set != null && !set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
@@ -87,60 +85,97 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
         if (sets.size() != 1 && threads > 1) {
-            executeMultithreadListRecords(oaipmhServer, sets);
+            executeMultithreadListRecords(oaipmhServer, sets, lastHarvestDate);
         } else {
             executeListRecords(oaipmhServer, set, fileFormat);
         }
     }
 
-    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {
+    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
         initThreadPool();
         long counter = 0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
         List<String> setsFromListSets = sets;
+        // if sets is empty get the sets from ListSet
         if (sets.isEmpty()) {
-            ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
-            setsFromListSets = setsQuery.getSets(oaipmhServer);
+            setsFromListSets = getSetsFromListSet(oaipmhServer, setsFromListSets, lastHarvestDate);
         }
-        logger.setTotalItems(setsFromListSets.size());
-        List<Future<ListRecordsResult>> results = null;
-        List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
+        if (! setsFromListSets.isEmpty()) {
+            logger.setTotalItems(setsFromListSets.size());
+            List<Future<ListRecordsResult>> results = null;
+            List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
 
-        int perThread = setsFromListSets.size() / threads;
+            int perThread = setsFromListSets.size() / threads;
 
-        // create task for each resource provider
-        for (int i = 0; i < threads; i++) {
-            int fromIndex = i * perThread;
-            int toIndex = (i + 1) * perThread;
-            if (i == threads - 1) {
-                toIndex = setsFromListSets.size();
+            // create task for each resource provider
+            for (int i = 0; i < threads; i++) {
+                int fromIndex = i * perThread;
+                int toIndex = (i + 1) * perThread;
+                if (i == threads - 1) {
+                    toIndex = setsFromListSets.size();
+                }
+                tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, fileFormat, oaipmhServer, logProgressInterval));
             }
-            tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, fileFormat, oaipmhServer, logProgressInterval));
-        }
-        try {
-            // invoke a separate thread for each provider
-            results = threadPool.invokeAll(tasks);
+            try {
+                // invoke a separate thread for each provider
+                results = threadPool.invokeAll(tasks);
 
-            ListRecordsResult listRecordsResult;
-            for (Future<ListRecordsResult> result : results) {
-                listRecordsResult = result.get();
-                LOG.info("Executor finished with {} errors in {} sec.",
-                        listRecordsResult.getErrors(), listRecordsResult.getTime());
-                counter += perThread;
-                logger.logProgress(counter);
+                ListRecordsResult listRecordsResult;
+                for (Future<ListRecordsResult> result : results) {
+                    listRecordsResult = result.get();
+                    LOG.info("Executor finished with {} errors in {} sec.",
+                            listRecordsResult.getErrors(), listRecordsResult.getTime());
+                    counter += perThread;
+                    logger.logProgress(counter);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOG.error("Interrupted.", e);
+            } catch (ExecutionException e) {
+                LOG.error("Problem with task thread execution.", e);
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOG.error("Interrupted.", e);
-        } catch (ExecutionException e) {
-            LOG.error("Problem with task thread execution.", e);
         }
-
-        clean();
+        // store the new harvest start date in the file
+        // Currently not changing the lastHarvestDate if failed-sets or manually added sets are running
+          if(sets.isEmpty()) {
+              LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
+              SetsUtility.writeNewHarvestDate(directoryLocation, start);
+          }
+            clean();
 
         LOG.info("ListRecords for all sets executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + sets.size() + " sets.");
+                ". Harvested " + setsFromListSets.size() + " sets.");
+    }
+
+    /**
+     * gets the list of sets to be execeuted
+     * if set == ALL, gets all the sets present
+     * if set is Empty and lastHarvestDate is present, gets all the updated, newly created and de-published datasets
+     * Also deletes the de-published datasets
+     *
+     * @return list of  datasets
+     */
+    private List<String> getSetsFromListSet (OAIPMHServiceClient oaipmhServer, List<String> setsFromListSets, String lastHarvestDate) {
+        ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
+        // Harvest all datasets if set = "ALL"
+        if (StringUtils.equals(set, "ALL")) {
+            setsFromListSets = setsQuery.getSets(oaipmhServer, null, null);
+            LOG.info("ALL {} sets ready for harvest.", setsFromListSets.size());
+        }
+        // if set is empty and lastHarvestDate is present. Check for Updated, newly created and de-published datasets
+        else if (set.isEmpty() && ! lastHarvestDate.isEmpty() ) {
+            List<String> setsToBeDeleted = SetsUtility.getSetsToBeDeleted(oaipmhServer, directoryLocation, logProgressInterval);
+            // delete the de-published datasets
+            if (! setsToBeDeleted.isEmpty()) {
+                LOG.info("De-published datasets : {} ", setsToBeDeleted.size());
+                SetsUtility.deleteDataset(setsToBeDeleted, directoryLocation);
+            }
+            //get the updated or newly added datasets
+            setsFromListSets = setsQuery.getSets(oaipmhServer, lastHarvestDate, null);
+            LOG.info("Updated or newly created datasets count is {} ", setsFromListSets.size());
+        }
+        return setsFromListSets;
     }
 
     private void executeListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier, String fileFormat) {
@@ -190,7 +225,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
         //create MD5Sum file for the Zip
         ZipUtility.createMD5SumFile(zipName);
-
         LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
                 ". Harvested " + counter + " records.");
     }

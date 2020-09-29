@@ -42,4 +42,8 @@ public class Constants {
     // File format
     public static final String XML_FILE                 = "XML";
     public static final String TTL_FILE                 = "TTL";
+
+    public static final String HARVEST_DATE_FORMAT      = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    public static final String HARVEST_DATE_FILENAME    = "lastHarvestDate.txt";
+
 }
