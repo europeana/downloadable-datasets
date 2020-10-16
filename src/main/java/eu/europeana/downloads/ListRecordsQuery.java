@@ -96,17 +96,29 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
         if (sets.size() != 1 && threads > 1) {
             DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets);
-            LOG.info("Sending email ");
-            emailService.sendSimpleMessageUsingTemplate("Download Run Status Report",
-                    downloadsReportMail,
-                    String.valueOf(status.getNoOfSets()),
-                    String.valueOf(status.getStartTime()),
-                    status.getTimeElapsed(),
-                    String.valueOf(status.getSetsHarvested()));
+            sendEmail(status);
         } else {
+            long start = System.currentTimeMillis();
             executeListRecords(oaipmhServer, set, fileFormat);
+            String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
+            DownloadsStatus status = new DownloadsStatus(1, 1, new java.util.Date(start));
+            status.setTimeElapsed(timeElapsed);
+            sendEmail(status);
         }
+    }
 
+    /**
+     * Method will send email with the download status
+     * @param status
+     */
+    private void sendEmail(DownloadsStatus status){
+        LOG.info("Sending email ");
+        emailService.sendSimpleMessageUsingTemplate("Download Run Status Report",
+                downloadsReportMail,
+                String.valueOf(status.getNoOfSets()),
+                String.valueOf(status.getStartTime()),
+                status.getTimeElapsed(),
+                String.valueOf(status.getSetsHarvested()));
     }
 
     private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {

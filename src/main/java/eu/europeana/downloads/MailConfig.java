@@ -30,13 +30,13 @@ class MailConfig {
                 "%n%n" +
                 "Downloads Status Report : %n===========================%n" +
                 "%n%n" +
-                "Number of datasets: \\t\\t%s" +
+                "Number of datasets: %s" +
                 "%n%n" +
-                "Start Time: \\t\\t%s" +
+                "Start Time:  %s" +
                 "%n%n" +
-                "Elapsed Time: \\t\\t%s" +
+                "Elapsed Time: %s" +
                 "%n%n" +
-                "Datasets Harvested: \\t\\t%s" +
+                "Datasets Harvested: %s" +
                 "%n%n" +
                 "The Europeana API Team");
         return message;
