@@ -46,4 +46,11 @@ public class Constants {
     public static final String HARVEST_DATE_FORMAT      = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String HARVEST_DATE_FILENAME    = "lastHarvestDate.txt";
 
+
+    // CSV File Constants
+    public static final String CSV_SEPARATOR            = ",";
+    public static final String CSV_HEADER               = "Failed Sets";
+    public static final String CSV_FILE                 = "FailedSetsReport";
+    public static final String CSV_EXTENSION            = ".csv";
+    public static final String REPORT_DATE_FORMAT       = "dd-MM-yyyy";
 }

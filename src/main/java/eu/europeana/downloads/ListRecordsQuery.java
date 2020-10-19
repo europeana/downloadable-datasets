@@ -7,7 +7,9 @@ import eu.europeana.oaipmh.service.exception.OaiPmhException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -49,6 +51,12 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     private ExecutorService threadPool;
 
+    @Autowired
+    private MailService  emailService;
+
+    @Autowired
+    private SimpleMailMessage downloadsReportMail;
+
     public ListRecordsQuery() {
     }
 
@@ -85,13 +93,33 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
         if (sets.size() != 1 && threads > 1) {
-            executeMultithreadListRecords(oaipmhServer, sets, lastHarvestDate);
+            DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets, lastHarvestDate);
+            sendEmail(status);
         } else {
+            long start = System.currentTimeMillis();
             executeListRecords(oaipmhServer, set, fileFormat);
+            String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
+            DownloadsStatus status = new DownloadsStatus(1, 1, new java.util.Date(start));
+            status.setTimeElapsed(timeElapsed);
+            sendEmail(status);
         }
     }
 
-    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
+    /**
+     * Method will send email with the download status
+     * @param status
+     */
+    private void sendEmail(DownloadsStatus status){
+        LOG.info("Sending email ");
+        emailService.sendSimpleMessageUsingTemplate("Download Run Status Report",
+                downloadsReportMail,
+                String.valueOf(status.getNoOfSets()),
+                String.valueOf(status.getStartTime()),
+                status.getTimeElapsed(),
+                String.valueOf(status.getSetsHarvested()));
+    }
+
+    private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
         initThreadPool();
         long counter = 0;
         long start = System.currentTimeMillis();
@@ -101,6 +129,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (sets.isEmpty()) {
             setsFromListSets = getSetsFromListSet(oaipmhServer, setsFromListSets, lastHarvestDate);
         }
+        DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
+
         if (! setsFromListSets.isEmpty()) {
             logger.setTotalItems(setsFromListSets.size());
             List<Future<ListRecordsResult>> results = null;
@@ -108,27 +138,33 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
             int perThread = setsFromListSets.size() / threads;
 
-            // create task for each resource provider
-            for (int i = 0; i < threads; i++) {
-                int fromIndex = i * perThread;
-                int toIndex = (i + 1) * perThread;
-                if (i == threads - 1) {
-                    toIndex = setsFromListSets.size();
-                }
-                tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, fileFormat, oaipmhServer, logProgressInterval));
+        // create task for each resource provider
+        for (int i = 0; i < threads; i++) {
+            int fromIndex = i * perThread;
+            int toIndex = (i + 1) * perThread;
+            if (i == threads - 1) {
+                toIndex = setsFromListSets.size();
             }
-            try {
-                // invoke a separate thread for each provider
-                results = threadPool.invokeAll(tasks);
-
+            tasks.add(new ListSetsExecutor(setsFromListSets.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, fileFormat, oaipmhServer, logProgressInterval));
+        }
+        try {
+            // invoke a separate thread for each provider
+            results = threadPool.invokeAll(tasks);
+            List<String> setsDownloaded = new ArrayList<>();
                 ListRecordsResult listRecordsResult;
                 for (Future<ListRecordsResult> result : results) {
                     listRecordsResult = result.get();
                     LOG.info("Executor finished with {} errors in {} sec.",
                             listRecordsResult.getErrors(), listRecordsResult.getTime());
                     counter += perThread;
-                    logger.logProgress(counter);
+                    // get the successfully downloaded sets
+                if(StringUtils.isNotEmpty(listRecordsResult.getSetsDownloaded())) {
+                    setsDownloaded.addAll(Arrays.asList(listRecordsResult.getSetsDownloaded().split("\\s*,\\s*")));
                 }
+                logger.logProgress(counter);
+            }
+            status.setSetsHarvested(setsDownloaded.size());
+            getFailedSets(sets, setsDownloaded,directoryLocation);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOG.error("Interrupted.", e);
@@ -136,17 +172,20 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 LOG.error("Problem with task thread execution.", e);
             }
         }
+
         // store the new harvest start date in the file
         // Currently not changing the lastHarvestDate if failed-sets or manually added sets are running
-          if(sets.isEmpty()) {
-              LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
-              SetsUtility.writeNewHarvestDate(directoryLocation, start);
-          }
-            clean();
-
-        LOG.info("ListRecords for all sets executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + setsFromListSets.size() + " sets.");
+        if(sets.isEmpty()) {
+            LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
+            SetsUtility.writeNewHarvestDate(directoryLocation, start);
+        }
+        clean();
+        String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
+        status.setTimeElapsed(timeElapsed);
+        LOG.info("ListRecords for all {} sets executed in {}. Harvested {} sets." ,status.getNoOfSets(), timeElapsed, status.getSetsHarvested() );
+        return status;
     }
+
 
     /**
      * gets the list of sets to be execeuted
@@ -225,8 +264,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
         //create MD5Sum file for the Zip
         ZipUtility.createMD5SumFile(zipName);
-        LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + counter + " records.");
+        LOG.info("ListRecords for set {} executed in {}. Harvested {} records.", setIdentifier,
+                ProgressLogger.getDurationText(System.currentTimeMillis() - start), counter);
     }
 
     private String getResumptionRequest(String oaipmhServer, String resumptionToken) {
@@ -245,6 +284,13 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             sb.append(String.format(SET_PARAMETER, setIdentifier));
         }
         return sb.toString();
+    }
+
+    // gets the value of failed or missing sets or partially downloaded sets. Writes the data in .csv file
+    // It will easier to identify the failed sets after a run
+    private static void getFailedSets(List<String> sets, List<String> setsDownloaded, String directoryLocation) {
+        sets.removeAll(setsDownloaded);
+        CSVFile.writeInCsv(sets,directoryLocation);
     }
 
     @PreDestroy
