@@ -166,11 +166,6 @@ public class TurtleRecordWriter implements AutoCloseable {
         for (int i = 0; i < len; i++) {
             char c = str.charAt(i);
             switch (c) {
-                case '\t':
-                case '\b':
-                case '\n':
-                case '\r':
-                case '\f':
                 case '\"':
                 case '\\':
                     bufferedWriter.append('\\').append(c);
