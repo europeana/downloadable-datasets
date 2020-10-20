@@ -18,12 +18,12 @@ public class MailService {
     /**
      * This method will send compose and send the message
      */
-    private void sendSimpleMessage(String from, String[] bcc, String[] to, String subject, String messageBody) {
+    private void sendSimpleMessage(String from, String[] cc, String[] to, String subject, String messageBody) {
         LOG.debug("Sending email ...");
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(from);
-            message.setBcc(bcc);
+            message.setCc(cc);
             message.setTo(to);
             message.setSubject(subject);
             message.setText(messageBody);
@@ -38,6 +38,6 @@ public class MailService {
                                                SimpleMailMessage template,
                                                String... templateArgs) {
         String messageBody = String.format(template.getText(), templateArgs);
-        sendSimpleMessage(template.getFrom(), template.getBcc(), template.getTo(), subject, messageBody);
+        sendSimpleMessage(template.getFrom(), template.getCc(), template.getTo(), subject, messageBody);
     }
 }
