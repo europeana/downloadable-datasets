@@ -40,7 +40,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         int errors = 0;
         long counter = 0;
         long start = System.currentTimeMillis();
-
+        StringBuilder setsDownloaded= new StringBuilder();
         // This is a bit of a hack. The first callable that reaches this point will create a progressLogger and only
         // this callable will log progress. This is to avoid too much logging from all threads.
         synchronized(this) {
@@ -54,6 +54,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         for (String set : sets ) {
             try {
                 new ListRecordsQuery(metadataPrefix, set, directoryLocation, fileFormat, logProgressInterval).execute(oaipmhServer);
+                setsDownloaded.append(set + ",");
             } catch (Exception e) {
                 LOG.error("Error retrieving set {} {}", set,  e);
                 errors++;
@@ -69,6 +70,6 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
                 logger.logProgress(counter);
             }
         }
-        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, errors);
+        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, setsDownloaded.toString(), errors);
     }
 }
