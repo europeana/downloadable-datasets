@@ -25,15 +25,17 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
 
     private String directoryLocation;
 
-    private String metadataPrefix;
+    private String fileFormat;
 
+    private String metadataPrefix;
 
     private OAIPMHServiceClient oaipmhServer;
 
-    public ListSetsExecutor(List<String> sets, String metadataPrefix, String directoryLocation, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
+    public ListSetsExecutor(List<String> sets, String metadataPrefix, String directoryLocation, String fileFormat, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
         this.sets = sets;
         this.metadataPrefix = metadataPrefix;
         this.directoryLocation = directoryLocation;
+        this.fileFormat = fileFormat;
         this.oaipmhServer = oaipmhServer;
         this.logProgressInterval = logProgressInterval;
     }
@@ -43,7 +45,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         int errors = 0;
         long counter = 0;
         long start = System.currentTimeMillis();
-
+        StringBuilder setsDownloaded= new StringBuilder();
         // This is a bit of a hack. The first callable that reaches this point will create a progressLogger and only
         // this callable will log progress. This is to avoid too much logging from all threads.
         synchronized (this) {
@@ -56,17 +58,20 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         }
         for (String set : sets) {
             try {
-                new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer);
+                new ListRecordsQuery(metadataPrefix, set, directoryLocation, fileFormat, logProgressInterval).execute(oaipmhServer);
+                setsDownloaded.append(set).append(",");
             } catch (HttpServerErrorException | ResourceAccessException e) {
                 LOG.error("Error retrieving set {} {}", set, e);
                 // thread to wait for 2 milliseconds
-                Thread.currentThread().sleep(2000);
+                Thread.sleep(2000);
                 // will retry the request
                 boolean retrySuccess = retryTask(set);
                 if (! retrySuccess) {
                     errors++;
                 }
-            } catch (Exception e) {
+            }
+
+            catch (Exception e) {
                 LOG.error("Error retrieving set {} {}", set, e);
                 errors++;
             }
@@ -80,7 +85,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
                 logger.logProgress(counter);
             }
         }
-        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, errors);
+        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, setsDownloaded.toString(), errors);
     }
 
     /**
@@ -96,7 +101,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
             if (!success) {
                 try {
                     LOG.info("Retrying the set {} {} times ", set, i);
-                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer);
+                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, fileFormat, logProgressInterval).execute(oaipmhServer);
                     success = true;
                 } catch (HttpServerErrorException | ResourceAccessException ex) {
                     if (i == MAX_RETRIES_PER_THREAD) {

@@ -6,7 +6,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
-import java.util.zip.CRC32;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -18,20 +20,41 @@ public class ZipUtility {
         //adding a private constructor to hide implicit public one
     }
 
-    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record record) {
+    /**
+     *  method to write in the zip
+     */
+    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record record, String fileFormat) {
         try {
-            zout.putNextEntry(new ZipEntry(getEntryName(record)));
-            writer.write(record.getMetadata().getMetadata());
+            zout.putNextEntry(new ZipEntry(getEntryName(record, fileFormat)));
+            writer.write(dataToWriteInZip(record.getMetadata().getMetadata(), fileFormat));
             writer.flush();
             zout.closeEntry();
         } catch (IOException e) {
             LOG.error("Error writing the zip entry", e);
         }
-
     }
 
-    private static String getEntryName(Record record) {
+    /**
+     * converts the Record metadata into turtle if fileFormat is TTL.
+     * Otherwise the return the default metadata
+     * @return metadata
+     */
+    private static String dataToWriteInZip(String metadata, String fileFormat) {
+        if (StringUtils.equals(fileFormat, Constants.TTL_FILE)) {
+            return TurtleResponseParser.generateTurtle(metadata);
+        }
+        return metadata;
+    }
+
+    /**
+     * the name of the file depending upon the extension provided
+     * @return String
+     */
+    private static String getEntryName(Record record, String fileExtension) {
         String id = record.getHeader().getIdentifier();
+        if (StringUtils.equals(fileExtension, Constants.TTL_FILE)) {
+            return StringUtils.substringAfterLast(id, "/") + Constants.TTL_EXTENSION;
+        }
         return StringUtils.substringAfterLast(id, "/") + Constants.XML_EXTENSION;
     }
 
@@ -40,26 +63,35 @@ public class ZipUtility {
         return id.split("/")[0];
     }
 
-    public static void createCRCFile(String fileName) {
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(fileName + Constants.CRC_EXTENSION))) {
-            long checksum = generateCRC(fileName);
+    public static void createMD5SumFile(String fileName) {
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(fileName + Constants.MD5_EXTENSION))) {
+            String checksum = getMD5Sum(fileName);
             out.write(checksum + "\n");
         } catch (IOException e) {
-            LOG.error("Error creating CRC file", e);
+            LOG.error("Error creating MD5Sum file", e);
         }
     }
 
-    private static long generateCRC(String fileName) {
-        CRC32 checksum = new CRC32();
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(new File(fileName)))) {
-            int read = 0;
+    private static String getMD5Sum(String file) {
+        MessageDigest digest;
+        String checksum = null;
+        try(InputStream is = new FileInputStream(new File(file))) {
+            digest = MessageDigest.getInstance("MD5");
             byte[] buffer = new byte[1024];
-            while ((read = bis.read(buffer)) != -1) {
-                checksum.update(buffer, 0, read);
+            int read = 0;
+            while( (read = is.read(buffer)) > 0) {
+                digest.update(buffer, 0, read);
             }
-        } catch (IOException e) {
-            LOG.error("Error generating CRC32", e);
+            byte[] md5sum = digest.digest();
+            BigInteger bigInt = new BigInteger(1, md5sum);
+            checksum = bigInt.toString(16);
         }
-        return checksum.getValue();
+        catch(IOException e) {
+            LOG.error("Unable to process file for MD5", e);
+        }
+        catch (NoSuchAlgorithmException e) {
+            LOG.error( "Error while generating MD5", e);
+        }
+        return checksum;
     }
 }

@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.*;
 
+/**
+ * @deprecated  This is an alternative approach. Not used currently
+ */
+@Deprecated (since = "15-July-2020")
 @Component
 public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
@@ -39,6 +43,9 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
     @Value("${sets-folder}")
     private String directoryLocation;
+
+    @Value("${file-format}")
+    private String fileFormat;
 
     private ExecutorService threadPool;
 
@@ -63,7 +70,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
     private void initThreadPool() {
         // init thread pool
-        if (threads < 1) {
+        if (threads < 1 || sets.size() == 1) {
             threads = 1;
         }
         threadPool = Executors
@@ -77,14 +84,9 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer) {
         if (sets.size() != 1 && threads > 1) {
-            if (sets.isEmpty())  {
-                executeMultithreadListRecords(oaipmhServer, null);
-             } else {
-                for (String setIdentifier : sets) {
-                    executeMultithreadListRecords(oaipmhServer, setIdentifier);
-                }
+                executeMultithreadListRecords(oaipmhServer, sets);
             }
-        } else {
+         else {
             executeSingleThreadListRecord(oaipmhServer, set);
         }
     }
@@ -96,38 +98,65 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     private void executeSingleThreadListRecord(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
-        List<String> identifiers = getIdentifiers(oaipmhServer, setIdentifier);
-        for(String identifier : identifiers) {
-            new GetRecordQuery(metadataPrefix, identifier, directoryLocation).execute(oaipmhServer);
-        }
-    }
-
-    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
         initThreadPool();
-
-        long counter = 0;
         long start = System.currentTimeMillis();
-        ProgressLogger logger = new ProgressLogger(setIdentifier, -1, logProgressInterval);
+        ProgressLogger logger = new ProgressLogger("Single set", 1, logProgressInterval);
 
-        ListIdentifiersQuery identifiersQuery = prepareListIdentifiersQuery(setIdentifier);
-        List<String> identifiers = identifiersQuery.getIdentifiers(oaipmhServer, setIdentifier);
-        logger.setTotalItems(identifiers.size());
+        LOG.info(" {} Set to be executed by {} threads", setIdentifier, threads);
 
         List<Future<ListRecordsResult>> results = null;
         List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
+        tasks.add(new ListIdentifierExecutor(sets, from, metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+        try {
+            // invoke a separate thread for each provider
+            results = threadPool.invokeAll(tasks);
 
-        int perThread = identifiers.size() / threads;
+            ListRecordsResult listRecordsResult;
+            for (Future<ListRecordsResult> result : results) {
+                listRecordsResult = result.get();
+                LOG.info("Executor finished with {} errors in {} sec.",
+                        listRecordsResult.getErrors(), listRecordsResult.getTime());
+                logger.logProgress(1);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("Interrupted.", e);
+        } catch (ExecutionException e) {
+            LOG.error("Problem with task thread execution.", e);
+        }
 
-        // create task for each resource provider
+        clean();
+        LOG.info("ListIdentifier for set {} executed in {}. Harvested {} sets. ",setIdentifier,
+                ProgressLogger.getDurationText(System.currentTimeMillis() - start), sets.size());
+    }
+
+    private void executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets) {
+        initThreadPool();
+        List<String> setsFromListSets = sets;
+
+        long counter = 0;
+        long start = System.currentTimeMillis();
+        ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
+
+        // get all the sets in a list
+        if (sets.isEmpty()) {
+            ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
+            setsFromListSets = setsQuery.getSets(oaipmhServer, null, null);
+        }
+        LOG.info(" {} Sets to be executed by {} threads", setsFromListSets.size(), threads);
+        List<Future<ListRecordsResult>> results = null;
+        List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
+
+        int perThread = setsFromListSets.size() / threads;
+
         for (int i = 0; i < threads; i++) {
             int fromIndex = i * perThread;
             int toIndex = (i + 1) * perThread;
             if (i == threads - 1) {
-                toIndex = identifiers.size();
+                toIndex = setsFromListSets.size();
             }
-            tasks.add(new ListRecordsExecutor(setIdentifier, identifiers.subList(fromIndex, toIndex), metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
+            tasks.add(new ListIdentifierExecutor(setsFromListSets.subList(fromIndex, toIndex), from, metadataPrefix, directoryLocation, oaipmhServer, logProgressInterval));
         }
-
         try {
             // invoke a separate thread for each provider
             results = threadPool.invokeAll(tasks);
@@ -149,8 +178,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
 
         clean();
 
-        LOG.info("ListRecords for set " + setIdentifier + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + identifiers.size() + " identifiers.");
+        LOG.info("ListIdentifier for all sets executed in {}. Harvested {} sets ", ProgressLogger.getDurationText(System.currentTimeMillis() - start), sets.size());
     }
 
     private void execute(OAIPMHServiceClient oaipmhServer, String setName, List<String> identifiers) {
@@ -186,8 +214,8 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
             }
         }
 
-        LOG.info("ListIdentifiers for set " + setName + " executed in " + ProgressLogger.getDurationText(System.currentTimeMillis() - start) +
-                ". Harvested " + counter + " identifiers.");
+        LOG.info("ListIdentifiers for set {} executed in {}. Retrieved {} identifiers", setName,
+                ProgressLogger.getDurationText(System.currentTimeMillis() - start) ,counter);
     }
 
     /**
@@ -227,12 +255,6 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
         }
 
         return sb.toString();
-    }
-
-    private ListIdentifiersQuery prepareListIdentifiersQuery(String setIdentifier) {
-        ListIdentifiersQuery query = new ListIdentifiersQuery(metadataPrefix, from, setIdentifier, 30);
-        query.initSets();
-        return query;
     }
 
     @PreDestroy
