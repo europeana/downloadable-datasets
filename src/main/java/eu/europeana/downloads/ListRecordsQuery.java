@@ -96,12 +96,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets, lastHarvestDate);
             sendEmail(status);
         } else {
-            long start = System.currentTimeMillis();
             executeListRecords(oaipmhServer, set, fileFormat);
-            String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
-            DownloadsStatus status = new DownloadsStatus(1, 1, new java.util.Date(start));
-            status.setTimeElapsed(timeElapsed);
-            sendEmail(status);
         }
     }
 
