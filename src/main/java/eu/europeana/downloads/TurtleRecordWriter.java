@@ -47,6 +47,7 @@ public class TurtleRecordWriter implements AutoCloseable {
             }
         } finally {
             iter.close();
+            bufferedWriter.flush();
         }
     }
 
@@ -165,11 +166,6 @@ public class TurtleRecordWriter implements AutoCloseable {
         for (int i = 0; i < len; i++) {
             char c = str.charAt(i);
             switch (c) {
-                case '\t':
-                case '\b':
-                case '\n':
-                case '\r':
-                case '\f':
                 case '\"':
                 case '\\':
                     bufferedWriter.append('\\').append(c);
@@ -264,7 +260,6 @@ public class TurtleRecordWriter implements AutoCloseable {
     @Override
     public void close(){
         try {
-            bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
             LOG.error("Error closing the buffer writer ", e);

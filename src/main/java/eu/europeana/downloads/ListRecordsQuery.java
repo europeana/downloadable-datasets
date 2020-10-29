@@ -119,9 +119,15 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         long counter = 0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
-        List<String> setsFromListSets = sets;
-        // if sets is empty get the sets from ListSet
-        if (sets.isEmpty()) {
+        // make a deep copy of sets
+        List<String> setsFromListSets = new ArrayList<>();
+        Iterator<String> iterator = sets.iterator();
+        while(iterator.hasNext()){
+            setsFromListSets.add(iterator.next());
+        }
+        // if setsFromListSets is still empty get the sets from ListSet
+        // ie; either set is set to ALL or empty
+        if (setsFromListSets.isEmpty()) {
             setsFromListSets = getSetsFromListSet(oaipmhServer, setsFromListSets, lastHarvestDate);
         }
         DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
@@ -159,7 +165,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 logger.logProgress(counter);
             }
             status.setSetsHarvested(setsDownloaded.size());
-            getFailedSets(sets, setsDownloaded,directoryLocation);
+            getFailedSets(setsFromListSets, setsDownloaded,directoryLocation);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOG.error("Interrupted.", e);

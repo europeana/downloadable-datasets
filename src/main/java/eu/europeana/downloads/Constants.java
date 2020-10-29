@@ -36,7 +36,7 @@ public class Constants {
     public static final String TRUE                     = "true";
     public static final String FALSE                    = "false";
 
-    //MD5 Sum Constants
+    // MD5 Constants
     public static final String MD5_EXTENSION            = ".md5sum";
 
     // File format
