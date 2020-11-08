@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -30,6 +31,11 @@ public class OAIPMHServiceClient {
     @Value("${harvest-method}")
     private String harvestMethod;
 
+    @Value("${sets-folder}")
+    private String directoryLocation;
+
+    @Value("${failed-sets-retry-count}")
+    private int failedSetsRetryCount;
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -67,11 +73,33 @@ public class OAIPMHServiceClient {
         return oaipmhServer;
     }
 
+    /**
+     * Will execeute the verb and retry the Failed sets.
+     * Failed sets will be retried failedSetsRetryCount times
+     * If there are no failed sets, the retry mechanism will not be executed.
+     *
+     * @param verb
+     * @throws OaiPmhException
+     */
     public void execute(String verb) throws OaiPmhException {
         OAIPMHQuery verbToExecute = queries.get(verb);
         if (verbToExecute != null) {
             //LogFile.setFileName(verbToExecute.getVerbName());
-            verbToExecute.execute(this);
+            verbToExecute.execute(this, null);
+        }
+
+        // will check for failed sets and if present will retry those.
+        while(failedSetsRetryCount > 0) {
+            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+            if (!failedSets.isEmpty() & failedSetsRetryCount > 0) {
+                LOG.error("There are {} Failed sets - {}", failedSets.size(), failedSets);
+                verbToExecute.execute(this, failedSets);
+            }
+            else {
+                failedSetsRetryCount = 0 ;
+                LOG.info("No failed sets exist for this harvest.");
+            }
+            failedSetsRetryCount--;
         }
     }
 

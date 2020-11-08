@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import java.io.OutputStreamWriter;
+import java.util.List;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -46,7 +47,7 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     @Override
-    public void execute(OAIPMHServiceClient oaipmhServer) {
+    public void execute(OAIPMHServiceClient oaipmhServer, List<String> sets) {
         execute(oaipmhServer, identifier, zipOutputStream,writer);
     }
 

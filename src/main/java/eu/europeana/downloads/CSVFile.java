@@ -1,5 +1,6 @@
 package eu.europeana.downloads;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -7,6 +8,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -28,9 +30,8 @@ public class CSVFile {
            bw.newLine();
             for (String set : sets) {
                 bw.write(set);
-                bw.write(Constants.CSV_SEPARATOR);
+                bw.newLine();
             }
-            bw.newLine();
         } catch (UnsupportedEncodingException e) {
             LOG.error("Unsupported encoding format", e);
         } catch (FileNotFoundException e) {
@@ -45,6 +46,35 @@ public class CSVFile {
         Date today = Calendar.getInstance().getTime();
         DateFormat formatter = new SimpleDateFormat(Constants.REPORT_DATE_FORMAT);
         return formatter.format(today);
+    }
+
+    // returns the CSV file path
+    public static String getCsvFilePath(String directoryLocation) {
+       return directoryLocation + Constants.PATH_SEPERATOR + Constants.CSV_FILE + "_" + getDate() + Constants.CSV_EXTENSION;
+    }
+
+    /**
+     * Reads the FailedSetsReport generated at that time
+     *
+     * @param path path of the file
+     * @return list of all the failed sets
+     * returns "", if file is empty.
+     */
+    public static List<String> readCSVFile(String path) {
+        List<String> failedSets = new ArrayList<>();
+        try(BufferedReader csvReader = new BufferedReader(new FileReader(path))) {
+            String  nextLine;
+            while ((nextLine = csvReader.readLine()) != null) {
+                if (!StringUtils.equals(nextLine, Constants.CSV_HEADER)) {
+                    failedSets.add(nextLine);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            LOG.error("{} file doesn't exist. Failed sets report not generated" , Constants.CSV_FILE);
+        } catch (IOException e) {
+            LOG.error("Error reading the {} file",Constants.CSV_FILE, e);
+        }
+        return failedSets;
     }
 }
 

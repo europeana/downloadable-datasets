@@ -98,7 +98,7 @@ public class ListIdentifierExecutor implements Callable<ListRecordsResult> {
 
             for (String identifier : identifiers) {
                 try {
-                    new GetRecordQuery(metadataPrefix, identifier, zout, writer).execute(oaipmhServer);
+                    new GetRecordQuery(metadataPrefix, identifier, zout, writer).execute(oaipmhServer, null);
                 } catch (Exception e) {
                     LOG.error("Error retrieving identifier {} for set {} ", identifier, setIdentifier, e);
                     errors++;
