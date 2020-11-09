@@ -48,7 +48,6 @@ public class Constants {
 
 
     // CSV File Constants
-    public static final String CSV_SEPARATOR            = ",";
     public static final String CSV_HEADER               = "Failed Sets";
     public static final String CSV_FILE                 = "FailedSetsReport";
     public static final String CSV_EXTENSION            = ".csv";

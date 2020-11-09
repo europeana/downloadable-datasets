@@ -23,7 +23,7 @@ public class CSVFile {
 
     // creates a csv file in the desired location
     public static void writeInCsv(List<String> sets, String directoryLocation) {
-        String fileName = directoryLocation + Constants.PATH_SEPERATOR + Constants.CSV_FILE + "_" + getDate() + Constants.CSV_EXTENSION;
+        String fileName = directoryLocation + Constants.PATH_SEPERATOR + Constants.CSV_FILE + Constants.CSV_EXTENSION;
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), StandardCharsets.UTF_8))) {
             String header = Constants.CSV_HEADER;
             bw.write(header);
@@ -50,7 +50,7 @@ public class CSVFile {
 
     // returns the CSV file path
     public static String getCsvFilePath(String directoryLocation) {
-       return directoryLocation + Constants.PATH_SEPERATOR + Constants.CSV_FILE + "_" + getDate() + Constants.CSV_EXTENSION;
+       return directoryLocation + Constants.PATH_SEPERATOR + Constants.CSV_FILE + Constants.CSV_EXTENSION;
     }
 
     /**
