@@ -34,9 +34,6 @@ public class OAIPMHServiceClient {
     @Value("${sets-folder}")
     private String directoryLocation;
 
-    @Value("${failed-sets-retry-count}")
-    private int failedSetsRetryCount;
-
     private RestTemplate restTemplate = new RestTemplate();
 
     private ObjectMapper mapper;
@@ -74,8 +71,8 @@ public class OAIPMHServiceClient {
     }
 
     /**
-     * Will execeute the verb and retry the Failed sets.
-     * Failed sets will be retried failedSetsRetryCount times
+     * Will execute the verb and retry the Failed sets.
+     * Failed sets will be retried if any exist from previous run
      * If there are no failed sets, the retry mechanism will not be executed.
      *
      * @param verb
@@ -83,24 +80,21 @@ public class OAIPMHServiceClient {
      */
     public void execute(String verb) throws OaiPmhException {
         OAIPMHQuery verbToExecute = queries.get(verb);
-        if (verbToExecute != null) {
-            //LogFile.setFileName(verbToExecute.getVerbName());
-            verbToExecute.execute(this, null);
+
+        if(verbToExecute == null){
+            return;
         }
 
-        // will check for failed sets and if present will retry those.
-        while(failedSetsRetryCount > 0) {
-            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
-            if (!failedSets.isEmpty() & failedSetsRetryCount > 0) {
-                LOG.error("There are {} Failed sets - {}", failedSets.size(), failedSets);
-                verbToExecute.execute(this, failedSets);
-            }
-            else {
-                failedSetsRetryCount = 0 ;
-                LOG.info("No failed sets exist for this harvest.");
-            }
-            failedSetsRetryCount--;
+        // First check for failed sets from previous run
+        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+        if (!failedSets.isEmpty()) {
+            LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
+            verbToExecute.execute(this, failedSets);
+        } else {
+            LOG.info("No failed sets exist for this harvest.");
         }
+
+        verbToExecute.execute(this, null);
     }
 
     public OAIResponse makeRequest(String request, Class<? extends OAIResponse> responseClass) {
