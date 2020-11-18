@@ -30,7 +30,7 @@ public class ListSetsQuery extends BaseQuery implements OAIPMHQuery  {
     }
 
     @Override
-    public void execute(OAIPMHServiceClient oaipmhServer) {
+    public void execute(OAIPMHServiceClient oaipmhServer, List<String> sets) {
         execute(oaipmhServer, null, null, null);
     }
 

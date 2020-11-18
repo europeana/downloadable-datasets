@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -30,6 +31,8 @@ public class OAIPMHServiceClient {
     @Value("${harvest-method}")
     private String harvestMethod;
 
+    @Value("${sets-folder}")
+    private String directoryLocation;
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -67,12 +70,31 @@ public class OAIPMHServiceClient {
         return oaipmhServer;
     }
 
+    /**
+     * Will execute the verb and retry the Failed sets.
+     * Failed sets will be retried if any exist from previous run
+     * If there are no failed sets, the retry mechanism will not be executed.
+     *
+     * @param verb
+     * @throws OaiPmhException
+     */
     public void execute(String verb) throws OaiPmhException {
         OAIPMHQuery verbToExecute = queries.get(verb);
-        if (verbToExecute != null) {
-            //LogFile.setFileName(verbToExecute.getVerbName());
-            verbToExecute.execute(this);
+
+        if(verbToExecute == null){
+            return;
         }
+
+        // First check for failed sets from previous run
+        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+        if (!failedSets.isEmpty()) {
+            LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
+            verbToExecute.execute(this, failedSets);
+        } else {
+            LOG.info("No failed sets exist for this harvest.");
+        }
+
+        verbToExecute.execute(this, null);
     }
 
     public OAIResponse makeRequest(String request, Class<? extends OAIResponse> responseClass) {

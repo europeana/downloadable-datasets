@@ -82,7 +82,7 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     @Override
-    public void execute(OAIPMHServiceClient oaipmhServer) {
+    public void execute(OAIPMHServiceClient oaipmhServer, List<String> sets) {
         if (sets.size() != 1 && threads > 1) {
                 executeMultithreadListRecords(oaipmhServer, sets);
             }

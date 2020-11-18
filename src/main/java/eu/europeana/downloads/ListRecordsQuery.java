@@ -91,10 +91,15 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     @Override
-    public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
-        if (sets.size() != 1 && threads > 1) {
+    public void execute(OAIPMHServiceClient oaipmhServer, List<String> failedSets) throws OaiPmhException {
+        // if failedSets are present, download them
+        if (failedSets != null && !failedSets.isEmpty()) {
+            DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, failedSets, "");
+            sendEmail(status, true);
+        }
+        else if (sets.size() != 1 && threads > 1) {
             DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets, lastHarvestDate);
-            sendEmail(status);
+            sendEmail(status, false);
         } else {
             executeListRecords(oaipmhServer, set, fileFormat);
         }
@@ -103,10 +108,12 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     /**
      * Method will send email with the download status
      * @param status
+     * @param retryMail true : if the mail is sent for failed sets retry.
      */
-    private void sendEmail(DownloadsStatus status){
+    private void sendEmail(DownloadsStatus status, boolean retryMail){
         LOG.info("Sending email ");
-        emailService.sendSimpleMessageUsingTemplate("Download Run Status Report",
+        String subject = retryMail ? Constants.FAILED_SETS_RETRY_SUBJECT : Constants.DOWNLOADS_SUBJECT;
+        emailService.sendSimpleMessageUsingTemplate(subject,
                 downloadsReportMail,
                 String.valueOf(status.getNoOfSets()),
                 String.valueOf(status.getStartTime()),
