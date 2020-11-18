@@ -22,6 +22,7 @@
         <oai-pmh.version>0.7-SNAPSHOT</oai-pmh.version>
         <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
         <jackson.version>2.10.3</jackson.version>
+        <apiCommons.version>0.2.13-SNAPSHOT</apiCommons.version>
 
         <spring.boot.mainclass>eu.europeana.downloads.DownloadsGenerator</spring.boot.mainclass>
     </properties>
@@ -86,24 +87,10 @@
             <version>20141113</version>
         </dependency>
 
-        <!-- Turtle dependencies -->
         <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>apache-jena</artifactId>
-            <version>3.13.0</version>
-            <type>pom</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-rdf-jena</artifactId>
-            <version>0.5.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.jena</groupId>
-                    <artifactId>jena-osgi</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>eu.europeana.api.commons</groupId>
+            <artifactId>commons-web</artifactId>
+            <version>${apiCommons.version}</version>
         </dependency>
 
         <dependency>
