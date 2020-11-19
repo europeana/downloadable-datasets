@@ -8,6 +8,7 @@ public class DownloadsStatus {
     private int setsHarvested;
     private Date startTime;
     private String timeElapsed;
+    private String retriedSetsStatus;
 
     public DownloadsStatus() {
 
@@ -51,5 +52,12 @@ public class DownloadsStatus {
         this.timeElapsed = timeElapsed;
     }
 
+    public String getRetriedSetsStatus() {
+        return retriedSetsStatus;
+    }
+
+    public void setRetriedSetsStatus(String retriedSetsStatus) {
+        this.retriedSetsStatus = retriedSetsStatus;
+    }
 }
 

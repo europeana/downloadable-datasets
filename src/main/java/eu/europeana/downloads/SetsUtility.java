@@ -121,4 +121,32 @@ public class SetsUtility {
         Date today = Calendar.getInstance().getTime();
         return formatter.format(today);
     }
+
+    /**
+     * Returns the sets along with their status
+     *
+     * @param retriedSets The sets retried from the FailedSets.csv file
+     * @param directoryLocation folder location where file is present
+     */
+    public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation){
+        StringBuilder status = new StringBuilder();
+        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+        if (failedSets.isEmpty()){
+            status.append(retriedSets);
+            status.append(": ");
+            status.append(Constants.SUCCESS);
+        } else {
+            retriedSets.removeAll(failedSets);
+            if (!retriedSets.isEmpty()) {
+                status.append(retriedSets);
+                status.append(": ");
+                status.append(Constants.SUCCESS);
+                status.append("\n");
+            }
+            status.append(failedSets);
+            status.append(": ");
+            status.append(Constants.FAILED);
+        }
+        return status.toString();
+    }
 }
