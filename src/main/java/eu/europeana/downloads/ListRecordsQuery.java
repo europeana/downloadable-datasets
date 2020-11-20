@@ -233,7 +233,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         String request = getRequest(oaipmhServer.getOaipmhServer(), setIdentifier);
         ListRecordsResponse response = oaipmhServer.getListRecordRequest(request);
         ListRecords responseObject = response.getListRecords();
-        String zipName = directoryLocation + Constants.PATH_SEPERATOR + setIdentifier + Constants.ZIP_EXTENSION ;
+        String zipName = SetsUtility.getFolderName(directoryLocation, fileFormat) +
+                Constants.PATH_SEPERATOR + setIdentifier + Constants.ZIP_EXTENSION ;
         try (final ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(new File(zipName)));
              OutputStreamWriter writer = new OutputStreamWriter(zout)) {
 

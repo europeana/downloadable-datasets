@@ -7,7 +7,7 @@ public class Constants {
     public static final String LIST_IDENTIFIERS_VERB    = "ListIdentifiers";
     public static final String LIST_RECORDS_VERB        = "ListRecords";
     public static final String LIST_SET_VERB            = "ListSets";
-
+    public static final String CHECKSUM_VERB            = "CheckSum";
 
     // Zip constants
     public static final String ZIP_EXTENSION            = ".zip";
