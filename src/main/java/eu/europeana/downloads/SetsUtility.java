@@ -131,6 +131,7 @@ public class SetsUtility {
     public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation){
         StringBuilder status = new StringBuilder();
         List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+        status.append("\n");
         if (failedSets.isEmpty()){
             status.append(retriedSets);
             status.append(": ");
