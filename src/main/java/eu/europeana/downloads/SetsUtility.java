@@ -87,6 +87,7 @@ public class SetsUtility {
      * @return list of all depublished dataset
      */
     public static List<String> getSetsToBeDeleted(OAIPMHServiceClient oaipmhServer, String directoryLocation, int logProgressInterval) {
+        LOG.info("Executing ListSet for De-published Datasets ");
         ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
         List<String> lastHarvestedSets = getLastHarvestedSets(directoryLocation);
         List<String> currentSetsList = setsQuery.getSets(oaipmhServer, null, null);

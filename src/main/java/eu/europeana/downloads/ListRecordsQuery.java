@@ -70,7 +70,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @PostConstruct
     public final void initSets() {
-        lastHarvestDate = SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR + Constants.HARVEST_DATE_FILENAME);
+        lastHarvestDate = (SetsUtility.getLastHarvestDate(SetsUtility.getFolderName(directoryLocation, fileFormat)
+                + Constants.PATH_SEPERATOR + Constants.HARVEST_DATE_FILENAME)).trim();
         if (set != null && !set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
@@ -126,6 +127,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         long counter = 0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
+        String folderLocation = SetsUtility.getFolderName(directoryLocation, fileFormat);
         // make a deep copy of sets
         List<String> setsFromListSets = new ArrayList<>();
         Iterator<String> iterator = sets.iterator();
@@ -135,7 +137,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // if setsFromListSets is still empty get the sets from ListSet
         // ie; either set is set to ALL or empty
         if (setsFromListSets.isEmpty()) {
-            setsFromListSets = getSetsFromListSet(oaipmhServer, setsFromListSets, lastHarvestDate);
+            setsFromListSets = getSetsFromListSet(oaipmhServer, setsFromListSets, lastHarvestDate, folderLocation);
         }
         DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
 
@@ -172,7 +174,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 logger.logProgress(counter);
             }
             status.setSetsHarvested(setsDownloaded.size());
-            getFailedSets(setsFromListSets, setsDownloaded,directoryLocation);
+            getFailedSets(setsFromListSets, setsDownloaded,folderLocation);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOG.error("Interrupted.", e);
@@ -185,7 +187,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // Currently not changing the lastHarvestDate if failed-sets or manually added sets are running
         if(sets.isEmpty()) {
             LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
-            SetsUtility.writeNewHarvestDate(directoryLocation, start);
+            SetsUtility.writeNewHarvestDate(folderLocation, start);
         }
         clean();
         String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
@@ -203,7 +205,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
      *
      * @return list of  datasets
      */
-    private List<String> getSetsFromListSet (OAIPMHServiceClient oaipmhServer, List<String> setsFromListSets, String lastHarvestDate) {
+    private List<String> getSetsFromListSet (OAIPMHServiceClient oaipmhServer, List<String> setsFromListSets, String lastHarvestDate, String folderLocation) {
         ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
         // Harvest all datasets if set = "ALL"
         if (StringUtils.equals(set, "ALL")) {
@@ -212,13 +214,16 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
         // if set is empty and lastHarvestDate is present. Check for Updated, newly created and de-published datasets
         else if (set.isEmpty() && ! lastHarvestDate.isEmpty() ) {
-            List<String> setsToBeDeleted = SetsUtility.getSetsToBeDeleted(oaipmhServer, directoryLocation, logProgressInterval);
+            List<String> setsToBeDeleted = SetsUtility.getSetsToBeDeleted(oaipmhServer, folderLocation, logProgressInterval);
             // delete the de-published datasets
             if (! setsToBeDeleted.isEmpty()) {
                 LOG.info("De-published datasets : {} ", setsToBeDeleted.size());
-                SetsUtility.deleteDataset(setsToBeDeleted, directoryLocation);
+                SetsUtility.deleteDataset(setsToBeDeleted, folderLocation);
+            } else {
+                LOG.info("There are no De-published datasets");
             }
             //get the updated or newly added datasets
+            LOG.info("Executing ListSet to get Updated/Newly-Created datasets since {}", lastHarvestDate);
             setsFromListSets = setsQuery.getSets(oaipmhServer, lastHarvestDate, null);
             LOG.info("Updated or newly created datasets count is {} ", setsFromListSets.size());
         }
