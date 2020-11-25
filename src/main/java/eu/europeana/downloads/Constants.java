@@ -54,7 +54,7 @@ public class Constants {
     public static final String REPORT_DATE_FORMAT       = "dd-MM-yyyy";
 
     // Mail Constants
-    public static final String DOWNLOADS_SUBJECT = "Downloads Run Status Report";
-    public static final String FAILED_SETS_RETRY_SUBJECT = "Failed Sets Retry Status Report";
+    public static final String DOWNLOADS_SUBJECT = "Downloads Run Status Report for ";
+    public static final String FAILED_SETS_RETRY_SUBJECT = "Failed Sets Retry Status Report for ";
 
 }

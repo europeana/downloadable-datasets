@@ -114,7 +114,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private void sendEmail(DownloadsStatus status, boolean retryMail){
         LOG.info("Sending email ");
         String subject = retryMail ? Constants.FAILED_SETS_RETRY_SUBJECT : Constants.DOWNLOADS_SUBJECT;
-        emailService.sendSimpleMessageUsingTemplate(subject,
+        fileFormat = StringUtils.isEmpty(fileFormat) ? Constants.XML_FILE : fileFormat;
+        emailService.sendSimpleMessageUsingTemplate(subject + fileFormat + " files",
                 downloadsReportMail,
                 String.valueOf(status.getNoOfSets()),
                 String.valueOf(status.getStartTime()),
