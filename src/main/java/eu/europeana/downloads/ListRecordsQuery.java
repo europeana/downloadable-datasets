@@ -96,6 +96,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // if failedSets are present, download them
         if (failedSets != null && !failedSets.isEmpty()) {
             DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, failedSets, "");
+            status.setRetriedSetsStatus(SetsUtility.getRetriedSetsStatus(failedSets,directoryLocation));
             sendEmail(status, true);
         }
         else if (sets.size() != 1 && threads > 1) {
@@ -114,13 +115,14 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private void sendEmail(DownloadsStatus status, boolean retryMail){
         LOG.info("Sending email ");
         String subject = retryMail ? Constants.FAILED_SETS_RETRY_SUBJECT : Constants.DOWNLOADS_SUBJECT;
+        String setsHarvested = retryMail ? status.getRetriedSetsStatus() : String.valueOf(status.getSetsHarvested());
         fileFormat = StringUtils.isEmpty(fileFormat) ? Constants.XML_FILE : fileFormat;
         emailService.sendSimpleMessageUsingTemplate(subject + fileFormat + " files",
                 downloadsReportMail,
                 String.valueOf(status.getNoOfSets()),
                 String.valueOf(status.getStartTime()),
                 status.getTimeElapsed(),
-                String.valueOf(status.getSetsHarvested()));
+                String.valueOf(setsHarvested));
     }
 
     private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {

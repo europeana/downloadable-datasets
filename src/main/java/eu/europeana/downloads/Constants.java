@@ -36,6 +36,10 @@ public class Constants {
     public static final String TRUE                     = "true";
     public static final String FALSE                    = "false";
 
+    // Status Values
+    public static final String SUCCESS                   = "Success";
+    public static final String FAILED                    = "Failed";
+
     // MD5 Constants
     public static final String MD5_EXTENSION            = ".md5sum";
 
