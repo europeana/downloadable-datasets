@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -86,6 +87,7 @@ public class SetsUtility {
      * @return list of all depublished dataset
      */
     public static List<String> getSetsToBeDeleted(OAIPMHServiceClient oaipmhServer, String directoryLocation, int logProgressInterval) {
+        LOG.info("Executing ListSet for De-published Datasets ");
         ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
         List<String> lastHarvestedSets = getLastHarvestedSets(directoryLocation);
         List<String> currentSetsList = setsQuery.getSets(oaipmhServer, null, null);
@@ -120,6 +122,39 @@ public class SetsUtility {
         DateFormat formatter = new SimpleDateFormat(Constants.HARVEST_DATE_FORMAT);
         Date today = Calendar.getInstance().getTime();
         return formatter.format(today);
+    }
+
+    /**
+     * Creates the folders
+     * for TTL : directoryLocation/TTL
+     * For XML : directoryLocation/XML
+     *
+     * @param directoryLocation folder location where file is present
+     */
+    public static void createFolders(String directoryLocation) {
+        File ttlDirectory = new File(directoryLocation, Constants.TTL_FILE);
+        File xmlDirectory = new File(directoryLocation, Constants.XML_FILE);
+        if (! ttlDirectory.exists()) {
+            ttlDirectory.mkdir();
+       }
+        if (!xmlDirectory.exists()) {
+            xmlDirectory.mkdir();
+        }
+    }
+
+    /**
+     *  retruns the folder path based on file format
+     * for TTL : directoryLocation/TTL
+     * For XML : directoryLocation/XML
+     *
+     * @param directoryLocation folder location where file is present
+     * @param fileFormat file format
+     */
+    public static String getFolderName(String directoryLocation, String fileFormat) {
+        if(StringUtils.equals(fileFormat, Constants.TTL_FILE)) {
+            return directoryLocation + Constants.PATH_SEPERATOR + Constants.TTL_FILE;
+        }
+        return directoryLocation + Constants.PATH_SEPERATOR + Constants.XML_FILE;
     }
 
     /**

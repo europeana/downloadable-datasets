@@ -47,6 +47,9 @@ public class OAIPMHServiceClient {
     @Autowired
     private ListSetsQuery listSetsQuery;
 
+    @Autowired
+    private CheckSumGenerator checkSumGenerator;
+
     private Map<String, OAIPMHQuery> queries = new HashMap<>();
 
     @PostConstruct
@@ -54,6 +57,7 @@ public class OAIPMHServiceClient {
         queries.put("ListIdentifiers", listIdentifiersQuery);
         queries.put("ListRecords", listRecordsQuery);
         queries.put("ListSets", listSetsQuery);
+        queries.put("CheckSum", checkSumGenerator);
 
         mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
@@ -84,7 +88,7 @@ public class OAIPMHServiceClient {
         if(verbToExecute == null){
             return;
         }
-
+        SetsUtility.createFolders(directoryLocation);
         // First check for failed sets from previous run
         List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
         if (!failedSets.isEmpty()) {
