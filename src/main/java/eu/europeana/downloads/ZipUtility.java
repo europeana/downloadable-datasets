@@ -63,9 +63,19 @@ public class ZipUtility {
         return id.split("/")[0];
     }
 
-    public static void createMD5SumFile(String fileName) {
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(fileName + Constants.MD5_EXTENSION))) {
-            String checksum = getMD5Sum(fileName);
+    /**
+     * creates the md5Sum for the file
+     */
+    public static void createMD5SumFile(String filename) {
+        createMD5SumFile(filename, filename);
+    }
+
+    /**
+     * creates the md5Sum for the file when source and destination folder are different
+     */
+    public static void createMD5SumFile(String sourceFolder, String destinationFolder) {
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(destinationFolder + Constants.MD5_EXTENSION))) {
+            String checksum = getMD5Sum(sourceFolder);
             out.write(checksum + "\n");
         } catch (IOException e) {
             LOG.error("Error creating MD5Sum file", e);
