@@ -53,6 +53,7 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
             LOG.info(" NOT Generating CheckSum");
         } else {
             for (String zipFile : zips) {
+                LOG.info("Generating CheckSum for zip {} ", zipFile);
                 String extension = Constants.PATH_SEPERATOR + zipFile;
                 ZipUtility.createMD5SumFile(zipsPath + extension, checkSumPath + extension);
             }
