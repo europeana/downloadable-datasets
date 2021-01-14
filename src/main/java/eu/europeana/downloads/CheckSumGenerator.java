@@ -67,7 +67,7 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
      * @return list of zip files
      */
     private List<String> getZipFiles(String location) {
-        if (Files.exists(Paths.get(location), LinkOption.NOFOLLOW_LINKS)) {
+        if (Files.exists(Paths.get(location))) {
             return Stream.of(new File(location).listFiles())
                     .filter(file -> file.getName().endsWith(Constants.ZIP_EXTENSION))
                     .map(File::getName)
