@@ -42,6 +42,7 @@ public class Constants {
 
     // MD5 Constants
     public static final String MD5_EXTENSION            = ".md5sum";
+    public static final String CHECKSUM_EXTENSION       = ZIP_EXTENSION + MD5_EXTENSION;
 
     // File format
     public static final String XML_FILE                 = "XML";

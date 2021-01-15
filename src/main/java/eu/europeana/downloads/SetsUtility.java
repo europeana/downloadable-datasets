@@ -63,16 +63,17 @@ public class SetsUtility {
 
     /**
      * gets the list of last harvested datasets
+     * fetches the md5 checksum files from the source folder
      *
-     * @return list of all datasets (ie; .zip files) harvested last time
+     * @return list of all datasets harvested last time
      */
     public static List<String> getLastHarvestedSets(String directoryLocation) {
         List<String> result = new ArrayList<>();
         try (Stream<Path> walk = Files.walk(Paths.get(directoryLocation))) {
             result = walk.map(x -> StringUtils.substring(x.toString(), directoryLocation.length() + 1))
-                    .filter(f -> f.endsWith(Constants.ZIP_EXTENSION)).collect(Collectors.toList());
+                    .filter(f -> f.endsWith(Constants.MD5_EXTENSION)).collect(Collectors.toList());
             // remove  .zip from the values
-            result = result.stream().map(s -> s.replaceAll(Constants.ZIP_EXTENSION, ""))
+            result = result.stream().map(s -> s.replaceAll(Constants.CHECKSUM_EXTENSION, ""))
                     .collect(Collectors.toList());
         } catch (IOException e) {
             LOG.error("Error getting the details of last harvested sets ", e);
@@ -81,10 +82,10 @@ public class SetsUtility {
     }
 
     /**
-     * gets the list of depublished sets.
+     * gets the list of de-published sets.
      * Compares with the existing list of dataset with the previously downloaded list of dataset
      *
-     * @return list of all depublished dataset
+     * @return list of all de-published dataset
      */
     public static List<String> getSetsToBeDeleted(OAIPMHServiceClient oaipmhServer, String directoryLocation, int logProgressInterval) {
         LOG.info("Executing ListSet for De-published Datasets ");
@@ -98,18 +99,16 @@ public class SetsUtility {
 
     /**
      * Deletes the list of sets provided.
-     * Deletes .zip file and .md5sum file for that set
+     * Deletes .md5sum file for that set from the source folder
      *
      * @param directoryLocation folder location where file is present
      */
     public static void deleteDataset(List<String> setsToBeDeleted, String directoryLocation) {
         for (String set : setsToBeDeleted) {
             try {
-                LOG.info("Deleting set : {} ", set);
-                String fileName = directoryLocation + Constants.PATH_SEPERATOR + set + Constants.ZIP_EXTENSION;
-                Path zipFile = Paths.get(fileName);
-                Path md5sumFile = Paths.get(fileName + Constants.MD5_EXTENSION);
-                Files.delete(zipFile);
+                LOG.info("Deleting md5 file  : {} ", set + Constants.CHECKSUM_EXTENSION);
+                String fileName = directoryLocation + Constants.PATH_SEPERATOR + set + Constants.CHECKSUM_EXTENSION;
+                Path md5sumFile = Paths.get(fileName);
                 Files.delete(md5sumFile);
             } catch (IOException e) {
                LOG.error("Error deleting file {} ", set, e);
