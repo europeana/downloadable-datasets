@@ -72,7 +72,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     public final void initSets() {
         lastHarvestDate = (SetsUtility.getLastHarvestDate(SetsUtility.getFolderName(directoryLocation, fileFormat)
                 + Constants.PATH_SEPERATOR + Constants.HARVEST_DATE_FILENAME)).trim();
-        if (!StringUtils.equals(set, "ALL")) {
+        if (! set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
     }
