@@ -1,5 +1,6 @@
 package eu.europeana.downloads;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,9 +8,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,18 +37,19 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer, List<String> failedSets) {
         LOG.info("Generating CheckSum for the {} files ", fileFormat.isEmpty() ? Constants.XML_FILE : fileFormat);
-        zipsLocation = zipsLocation.isEmpty() ? directoryLocation : zipsLocation ;
-        generateCheckSum(SetsUtility.getFolderName(zipsLocation, fileFormat),SetsUtility.getFolderName(directoryLocation, fileFormat));
+        zipsLocation = zipsLocation.isEmpty() ? directoryLocation : zipsLocation;
+        generateCheckSum(SetsUtility.getFolderName(zipsLocation, fileFormat), SetsUtility.getFolderName(directoryLocation, fileFormat));
     }
 
     /**
      * generates checksum for the zips files present in the directory
      *
-     * @param zipsPath directory location for the zips file
+     * @param zipsPath     directory location for the zips file
      * @param checkSumPath directory location for where the checksum files will be generated
      */
     private void generateCheckSum(String zipsPath, String checkSumPath) {
-        List<String> zips = getZipFiles(zipsPath);
+        List<String> zips = getZipFilesWithoutCheckSum(zipsPath);
+        System.out.println("zips " + zips);
         if (zips.isEmpty()) {
             LOG.info("No zips are present at location \"{}\" OR the \"{}\" directory does not exist.", zipsPath, zipsPath);
             LOG.info(" NOT Generating CheckSum");
@@ -76,5 +78,39 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
         }
         LOG.error("NO such directory exists {}", location);
         return new ArrayList<>();
+    }
+
+    /**
+     * gets the zips files from the directory
+     *
+     * @param location location of the directory
+     * @return list of zip files
+     */
+    private List<String> getZipFilesWithoutCheckSum(String location) {
+        if (Files.exists(Paths.get(location))) {
+            List<String> zips = new ArrayList<>();
+            List<File> files = Arrays.asList(new File(location).listFiles());
+            for (File file : files) {
+                if (file.getName().endsWith(Constants.ZIP_EXTENSION)) {
+                    if (!checksumExists(files, file.getName())) {
+                        zips.add(file.getName());
+                    }
+                }
+            }
+            return zips;
+        }
+        LOG.error("NO such directory exists {}", location);
+        return new ArrayList<>();
+    }
+
+    private boolean checksumExists(List<File> fileList, String fileName) {
+        for (File checksum : fileList) {
+            if (checksum.getName().endsWith(Constants.MD5_EXTENSION)) {
+                if (StringUtils.equalsIgnoreCase(checksum.getName(), fileName + Constants.MD5_EXTENSION)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
