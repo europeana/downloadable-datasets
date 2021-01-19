@@ -49,11 +49,11 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
      */
     private void generateCheckSum(String zipsPath, String checkSumPath) {
         List<String> zips = getZipFilesWithoutCheckSum(zipsPath);
-        System.out.println("zips " + zips);
         if (zips.isEmpty()) {
             LOG.info("No zips are present at location \"{}\" OR the \"{}\" directory does not exist.", zipsPath, zipsPath);
             LOG.info(" NOT Generating CheckSum");
         } else {
+            LOG.info("Missing Checksum for Zips {} ", zips);
             for (String zipFile : zips) {
                 LOG.info("Generating CheckSum for zip {} ", zipFile);
                 String extension = Constants.PATH_SEPERATOR + zipFile;
