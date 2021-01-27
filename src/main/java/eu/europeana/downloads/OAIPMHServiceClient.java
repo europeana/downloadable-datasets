@@ -34,6 +34,9 @@ public class OAIPMHServiceClient {
     @Value("${sets-folder}")
     private String directoryLocation;
 
+    @Value("${file-format}")
+    private String fileFormat;
+
     private RestTemplate restTemplate = new RestTemplate();
 
     private ObjectMapper mapper;
@@ -90,7 +93,7 @@ public class OAIPMHServiceClient {
         }
         SetsUtility.createFolders(directoryLocation);
         // First check for failed sets from previous run
-        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
         if (!failedSets.isEmpty()) {
             LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
             verbToExecute.execute(this, failedSets);
