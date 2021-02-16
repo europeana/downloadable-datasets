@@ -44,9 +44,6 @@ public class ListIdentifiersQuery extends BaseQuery implements OAIPMHQuery {
     @Value("${sets-folder}")
     private String directoryLocation;
 
-    @Value("${file-format}")
-    private String fileFormat;
-
     private ExecutorService threadPool;
 
     private List<String> sets = new ArrayList<>();
