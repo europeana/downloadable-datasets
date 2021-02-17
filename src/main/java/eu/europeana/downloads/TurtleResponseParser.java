@@ -30,10 +30,6 @@ public class TurtleResponseParser {
             Model modelResult = ModelFactory.createDefaultModel().read(rdfInput, "", Constants.RDF_XML);
             writer.write(modelResult);
             return outputStream.toString();
-        } catch (RiotException e) {
-            if (e.getMessage().contains("Bad character in IRI (space)")) {
-                return Constants.RETRY;
-            }
         } catch (IOException e) {
             LOG.error("Error generating turtle output", e);
         }
