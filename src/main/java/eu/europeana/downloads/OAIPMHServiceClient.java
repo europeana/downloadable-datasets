@@ -6,6 +6,7 @@ import eu.europeana.oaipmh.model.RDFMetadata;
 import eu.europeana.oaipmh.model.response.*;
 import eu.europeana.oaipmh.model.serialize.*;
 import eu.europeana.oaipmh.service.exception.OaiPmhException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.XML;
@@ -33,9 +34,6 @@ public class OAIPMHServiceClient {
 
     @Value("${sets-folder}")
     private String directoryLocation;
-
-    @Value("${file-format}")
-    private String fileFormat;
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -93,12 +91,14 @@ public class OAIPMHServiceClient {
         }
         SetsUtility.createFolders(directoryLocation);
         // First check for failed sets from previous run
-        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
-        if (!failedSets.isEmpty()) {
-            LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
-            verbToExecute.execute(this, failedSets);
-        } else {
-            LOG.info("No failed sets exist for this harvest.");
+        if (!StringUtils.equals(verbToExecute.getVerbName(), Constants.CHECKSUM_VERB)) {
+            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+            if (!failedSets.isEmpty()) {
+                LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
+                verbToExecute.execute(this, failedSets);
+            } else {
+                LOG.info("No failed sets exist for this harvest.");
+            }
         }
 
         verbToExecute.execute(this, null);

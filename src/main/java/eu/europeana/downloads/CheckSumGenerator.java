@@ -26,9 +26,6 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
     @Value("#{'${zips-folder:${sets-folder:}}'}")
     private String zipsLocation;
 
-    @Value("${file-format}")
-    private String fileFormat;
-
     @Override
     public String getVerbName() {
         return Constants.CHECKSUM_VERB;
@@ -36,9 +33,11 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
 
     @Override
     public void execute(OAIPMHServiceClient oaipmhServer, List<String> failedSets) {
-        LOG.info("Generating CheckSum for the {} files ", fileFormat.isEmpty() ? Constants.XML_FILE : fileFormat);
         zipsLocation = zipsLocation.isEmpty() ? directoryLocation : zipsLocation;
-        generateCheckSum(SetsUtility.getFolderName(zipsLocation, fileFormat), SetsUtility.getFolderName(directoryLocation, fileFormat));
+        LOG.info("Generating CheckSum for the XML files ");
+        generateCheckSum(SetsUtility.getFolderName(zipsLocation, Constants.XML_FILE), SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE));
+        LOG.info("Generating CheckSum for the TTL files ");
+        generateCheckSum(SetsUtility.getFolderName(zipsLocation, Constants.TTL_FILE), SetsUtility.getFolderName(directoryLocation, Constants.TTL_FILE));
     }
 
     /**
@@ -51,7 +50,7 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
         List<String> zips = getZipFilesWithoutCheckSum(zipsPath);
         if (zips.isEmpty()) {
             LOG.info("No zips are present at location \"{}\" OR the \"{}\" directory does not exist.", zipsPath, zipsPath);
-            LOG.info(" NOT Generating CheckSum");
+            LOG.info(" NO CheckSum are Generated");
         } else {
             LOG.info("Missing Checksum for Zips {} ", zips);
             for (String zipFile : zips) {
@@ -91,10 +90,8 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
             List<String> zips = new ArrayList<>();
             List<File> files = Arrays.asList(new File(location).listFiles());
             for (File file : files) {
-                if (file.getName().endsWith(Constants.ZIP_EXTENSION)) {
-                    if (!checksumExists(files, file.getName())) {
-                        zips.add(file.getName());
-                    }
+                if (file.getName().endsWith(Constants.ZIP_EXTENSION) && !checksumExists(files, file.getName())) {
+                    zips.add(file.getName());
                 }
             }
             return zips;
@@ -105,10 +102,9 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
 
     private boolean checksumExists(List<File> fileList, String fileName) {
         for (File checksum : fileList) {
-            if (checksum.getName().endsWith(Constants.MD5_EXTENSION)) {
-                if (StringUtils.equalsIgnoreCase(checksum.getName(), fileName + Constants.MD5_EXTENSION)) {
-                    return true;
-                }
+            if (checksum.getName().endsWith(Constants.MD5_EXTENSION) &&
+                    StringUtils.equalsIgnoreCase(checksum.getName(), fileName + Constants.MD5_EXTENSION)) {
+                return true;
             }
         }
         return false;
