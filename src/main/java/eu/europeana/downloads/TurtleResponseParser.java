@@ -23,7 +23,7 @@ public class TurtleResponseParser {
             Model modelResult = ModelFactory.createDefaultModel().read(rdfInput, "", Constants.RDF_XML);
             writer.write(modelResult);
             return outputStream.toString();
-        } catch (IOException e) {
+        } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
             LOG.error("Error generating turtle output", e);
         }
         return "";
