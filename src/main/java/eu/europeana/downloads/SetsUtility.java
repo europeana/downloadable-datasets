@@ -178,15 +178,17 @@ public class SetsUtility {
      * @param retriedSets The sets retried from the FailedSets.csv file
      * @param directoryLocation folder location where file is present
      */
-    public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation){
+    public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation, String fileFormat){
         StringBuilder status = new StringBuilder();
-        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
         status.append("\n");
         if (failedSets.isEmpty()){
+            LOG.info("All the {} failed sets are harvested successfully", retriedSets.size());
             status.append(retriedSets);
             status.append(": ");
             status.append(Constants.SUCCESS);
         } else {
+            LOG.info("All the {} failed sets are NOT harvested", retriedSets.size());
             retriedSets.removeAll(failedSets);
             if (!retriedSets.isEmpty()) {
                 status.append(retriedSets);
@@ -197,6 +199,8 @@ public class SetsUtility {
             status.append(failedSets);
             status.append(": ");
             status.append(Constants.FAILED);
+            LOG.info("{} Sets successfully harvested : {} ", retriedSets.size(), retriedSets);
+            LOG.info("{} Failed sets now : {} ", failedSets.size(), failedSets);
         }
         return status.toString();
     }

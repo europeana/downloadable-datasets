@@ -35,6 +35,9 @@ public class OAIPMHServiceClient {
     @Value("${sets-folder}")
     private String directoryLocation;
 
+    @Value("${file-format}")
+    private String fileFormat;
+
     private RestTemplate restTemplate = new RestTemplate();
 
     private ObjectMapper mapper;
