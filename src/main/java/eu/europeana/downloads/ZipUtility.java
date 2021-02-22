@@ -2,7 +2,6 @@ package eu.europeana.downloads;
 
 import eu.europeana.oaipmh.model.Record;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.riot.RiotException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,17 +42,7 @@ public class ZipUtility {
      */
     private static String dataToWriteInZip(String metadata, String fileFormat) {
         if (StringUtils.equals(fileFormat, Constants.TTL_FILE)) {
-            String ttlResponse = "";
-            try {
-                ttlResponse = TurtleResponseParser.generateTurtle(metadata);
-            }
-            catch (RiotException e) {
-                if (e.getMessage().contains("Bad character in IRI (space)")) {
-                    // clean data then retry
-                    ttlResponse = TurtleResponseParser.generateTurtle(TurtleResponseParser.getCleanedData(metadata));
-                }
-            }
-            return ttlResponse;
+            return TurtleResponseParser.generateTurtle(metadata);
         }
         return metadata;
     }

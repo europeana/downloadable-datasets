@@ -4,7 +4,6 @@ import eu.europeana.api.commons.utils.TurtleRecordWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.riot.RiotException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,7 +29,7 @@ public class TurtleResponseParser {
             Model modelResult = ModelFactory.createDefaultModel().read(rdfInput, "", Constants.RDF_XML);
             writer.write(modelResult);
             return outputStream.toString();
-        } catch (IOException e) {
+        } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
             LOG.error("Error generating turtle output", e);
         }
         return "";
