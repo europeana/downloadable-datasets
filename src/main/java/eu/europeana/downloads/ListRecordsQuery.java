@@ -96,7 +96,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // if failedSets are present, download them
         if (failedSets != null && !failedSets.isEmpty()) {
             DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, failedSets, "");
-            status.setRetriedSetsStatus(SetsUtility.getRetriedSetsStatus(failedSets,directoryLocation));
+            status.setRetriedSetsStatus(SetsUtility.getRetriedSetsStatus(failedSets,directoryLocation, fileFormat));
             sendEmail(status, true);
         }
         else if (sets.size() != 1 && threads > 1) {
