@@ -1,11 +1,13 @@
 package eu.europeana.downloads;
 
+import com.ctc.wstx.util.StringUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import eu.europeana.oaipmh.model.RDFMetadata;
 import eu.europeana.oaipmh.model.response.*;
 import eu.europeana.oaipmh.model.serialize.*;
 import eu.europeana.oaipmh.service.exception.OaiPmhException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.XML;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +40,9 @@ public class OAIPMHServiceClient {
 
     @Value("${file-format}")
     private String fileFormat;
+
+    @Value("${skip-failedsets}")
+    private String skipFailedSets;
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -92,14 +99,25 @@ public class OAIPMHServiceClient {
             return;
         }
         SetsUtility.createFolders(directoryLocation);
-        // First check for failed sets from previous run
-        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
-        if (!failedSets.isEmpty()) {
-            LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
-            verbToExecute.execute(this, failedSets);
+        if(StringUtils.equalsIgnoreCase(skipFailedSets, "false")) {
+            // First check for failed sets from previous run
+            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
+            if (!failedSets.isEmpty()) {
+                LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
+                verbToExecute.execute(this, failedSets);
+            } else {
+                LOG.info("No failed sets exist for this harvest.");
+            }
         } else {
-            LOG.info("No failed sets exist for this harvest.");
+            LOG.info("Deleting failedsets file {} ",CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
+            File file = new File(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
+            try {
+                  Files.deleteIfExists(file.toPath());
+            } catch (IOException e) {
+                LOG.info("Error Deleting failed sets file");
+            }
         }
+
 
         verbToExecute.execute(this, null);
     }
