@@ -41,9 +41,6 @@ public class OAIPMHServiceClient {
     @Value("${file-format}")
     private String fileFormat;
 
-    @Value("${skip-failedsets}")
-    private String skipFailedSets;
-
     private RestTemplate restTemplate = new RestTemplate();
 
     private ObjectMapper mapper;
@@ -99,7 +96,7 @@ public class OAIPMHServiceClient {
             return;
         }
         SetsUtility.createFolders(directoryLocation);
-        if(StringUtils.equalsIgnoreCase(skipFailedSets, "false")) {
+
             // First check for failed sets from previous run
             List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
             if (!failedSets.isEmpty()) {
@@ -108,16 +105,6 @@ public class OAIPMHServiceClient {
             } else {
                 LOG.info("No failed sets exist for this harvest.");
             }
-        } else {
-            LOG.info("Deleting failedsets file {} ",CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
-            File file = new File(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
-            try {
-                  Files.deleteIfExists(file.toPath());
-            } catch (IOException e) {
-                LOG.info("Error Deleting failed sets file");
-            }
-        }
-
 
         verbToExecute.execute(this, null);
     }
