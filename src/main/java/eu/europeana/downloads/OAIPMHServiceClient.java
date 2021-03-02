@@ -1,5 +1,6 @@
 package eu.europeana.downloads;
 
+import com.ctc.wstx.util.StringUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import eu.europeana.oaipmh.model.RDFMetadata;
@@ -16,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,16 +96,14 @@ public class OAIPMHServiceClient {
             return;
         }
         SetsUtility.createFolders(directoryLocation);
-        // First check for failed sets from previous run
-        if (!StringUtils.equals(verbToExecute.getVerbName(), Constants.CHECKSUM_VERB)) {
-            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+            // First check for failed sets from previous run
+            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
             if (!failedSets.isEmpty()) {
                 LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
                 verbToExecute.execute(this, failedSets);
             } else {
                 LOG.info("No failed sets exist for this harvest.");
             }
-        }
 
         verbToExecute.execute(this, null);
     }
