@@ -35,11 +35,12 @@ public class SetsUtility {
      * @param path path of the file
      * @return lastharvestDate or " " if not present
      */
-    public static String getLastHarvestDate(String path) {
+    public static String getLastHarvestDate(String path, String set) {
         try {
             return Files.readString(Paths.get(path));
         } catch (NoSuchFileException e) {
-            LOG.error("{} file doesn't exist. Harvesting ALL sets for first time" , Constants.HARVEST_DATE_FILENAME);
+            String msg = (set.isEmpty() || set.equals("ALL")) ? "ALL" : set;
+            LOG.error("{} file doesn't exist. Harvesting {} sets " , Constants.HARVEST_DATE_FILENAME, msg);
         } catch (IOException e) {
                 LOG.error("Error reading the lastHarvestDate file", e);
         }
@@ -64,6 +65,7 @@ public class SetsUtility {
     /**
      * gets the list of last harvested datasets
      * fetches the md5 checksum files from the source folder
+     * By default the source folder is XML
      *
      * @return list of all datasets harvested last time
      */
@@ -178,9 +180,9 @@ public class SetsUtility {
      * @param retriedSets The sets retried from the FailedSets.csv file
      * @param directoryLocation folder location where file is present
      */
-    public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation, String fileFormat){
+    public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation){
         StringBuilder status = new StringBuilder();
-        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
+        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
         status.append("\n");
         if (failedSets.isEmpty()){
             LOG.info("All the {} failed sets are harvested successfully", retriedSets.size());

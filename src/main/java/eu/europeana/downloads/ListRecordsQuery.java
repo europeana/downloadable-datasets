@@ -67,7 +67,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @PostConstruct
     public final void initSets() {
         lastHarvestDate = (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
-                + Constants.HARVEST_DATE_FILENAME)).trim();
+                + Constants.HARVEST_DATE_FILENAME, set)).trim();
         if (! set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
@@ -92,7 +92,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // if failedSets are present, download them
         if (failedSets != null && !failedSets.isEmpty()) {
             DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, failedSets, "");
-            status.setRetriedSetsStatus(SetsUtility.getRetriedSetsStatus(failedSets,directoryLocation, fileFormat));
+            status.setRetriedSetsStatus(SetsUtility.getRetriedSetsStatus(failedSets,directoryLocation));
             sendEmail(status, true);
         }
         else if (sets.size() != 1 && threads > 1) {
@@ -210,7 +210,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             setsFromListSets = setsQuery.getSets(oaipmhServer, null, null);
             LOG.info("ALL {} sets ready for harvest.", setsFromListSets.size());
         }
-        // Check for Updated, newly created and de-published datasets
+        // Check for Updated, newly created and de-published datasets.
+        // For de-published dataset XML folder is read
        else {
             List<String> setsToBeDeleted = SetsUtility.getSetsToBeDeleted(oaipmhServer,
                     SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE), logProgressInterval);
