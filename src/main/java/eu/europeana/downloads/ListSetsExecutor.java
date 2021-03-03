@@ -25,17 +25,14 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
 
     private String directoryLocation;
 
-    private String fileFormat;
-
     private String metadataPrefix;
 
     private OAIPMHServiceClient oaipmhServer;
 
-    public ListSetsExecutor(List<String> sets, String metadataPrefix, String directoryLocation, String fileFormat, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
+    public ListSetsExecutor(List<String> sets, String metadataPrefix, String directoryLocation, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
         this.sets = sets;
         this.metadataPrefix = metadataPrefix;
         this.directoryLocation = directoryLocation;
-        this.fileFormat = fileFormat;
         this.oaipmhServer = oaipmhServer;
         this.logProgressInterval = logProgressInterval;
     }
@@ -58,7 +55,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
         }
         for (String set : sets) {
             try {
-                new ListRecordsQuery(metadataPrefix, set, directoryLocation, fileFormat, logProgressInterval).execute(oaipmhServer, null);
+                new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer, null);
                 setsDownloaded.append(set).append(",");
             } catch (HttpServerErrorException | ResourceAccessException e) {
                 LOG.error("Error retrieving set {} {}", set, e);
@@ -101,7 +98,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
             if (!success) {
                 try {
                     LOG.info("Retrying the set {} {} times ", set, i);
-                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, fileFormat, logProgressInterval).execute(oaipmhServer, null);
+                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer, null);
                     success = true;
                 } catch (HttpServerErrorException | ResourceAccessException ex) {
                     if (i == MAX_RETRIES_PER_THREAD) {

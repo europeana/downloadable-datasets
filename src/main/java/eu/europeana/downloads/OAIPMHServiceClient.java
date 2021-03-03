@@ -19,7 +19,12 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,9 +42,6 @@ public class OAIPMHServiceClient {
 
     @Value("${sets-folder}")
     private String directoryLocation;
-
-    @Value("${file-format}")
-    private String fileFormat;
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -97,16 +99,54 @@ public class OAIPMHServiceClient {
         }
         SetsUtility.createFolders(directoryLocation);
 
-            // First check for failed sets from previous run
-            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
-            if (!failedSets.isEmpty()) {
-                LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
-                verbToExecute.execute(this, failedSets);
-            } else {
-                LOG.info("No failed sets exist for this harvest.");
+        // temp code
+        if(StringUtils.equals(Constants.CHECKSUM_VERB, verbToExecute.getVerbName())) {
+            // delete failed sets file
+            File xmlfile = new File(SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)
+                    + Constants.PATH_SEPERATOR + Constants.CSV_FILE + Constants.CSV_EXTENSION);
+            File ttlfile = new File(SetsUtility.getFolderName(directoryLocation, Constants.TTL_FILE)
+                    + Constants.PATH_SEPERATOR + Constants.CSV_FILE + Constants.CSV_EXTENSION);
+            //delete lastharvest date file
+            File xmlfile1 = new File(SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)
+                    + Constants.PATH_SEPERATOR + Constants.HARVEST_DATE_FILENAME);
+
+            File ttlfile1 = new File(SetsUtility.getFolderName(directoryLocation, Constants.TTL_FILE)
+                    + Constants.PATH_SEPERATOR + Constants.HARVEST_DATE_FILENAME);
+           LOG.info("removing : {} , {} , {}, {}",  xmlfile, ttlfile, xmlfile1, ttlfile1);
+
+            try {
+                Files.deleteIfExists(xmlfile.toPath());
+                Files.deleteIfExists(ttlfile.toPath());
+                Files.deleteIfExists(xmlfile1.toPath());
+                Files.deleteIfExists(ttlfile1.toPath());
+
+            } catch (IOException e) {
+                LOG.info("error removing : {} , {} , {}, {}",  xmlfile, ttlfile, xmlfile1, ttlfile1);
             }
 
-        verbToExecute.execute(this, null);
+            // create a harvest date file
+            LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
+            try (PrintWriter writer = new PrintWriter(directoryLocation + Constants.PATH_SEPERATOR + Constants.HARVEST_DATE_FILENAME, StandardCharsets.UTF_8)) {
+                DateFormat formatter = new SimpleDateFormat(Constants.HARVEST_DATE_FORMAT);
+                writer.write("2021-02-23T00:00:20Z");
+            } catch (IOException e) {
+                LOG.error("Error writing the {} file ", Constants.HARVEST_DATE_FILENAME, e);
+            }
+
+        } else {
+            // failed sets will not be retied in verb is Checksum
+            if (!StringUtils.equals(Constants.CHECKSUM_VERB, verbToExecute.getVerbName())) {
+                // First check for failed sets from previous run
+                List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
+                if (!failedSets.isEmpty()) {
+                    LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
+                    verbToExecute.execute(this, failedSets);
+                } else {
+                    LOG.info("No failed sets exist for this harvest.");
+                }
+            }
+            verbToExecute.execute(this, null);
+        }
     }
 
     public OAIResponse makeRequest(String request, Class<? extends OAIResponse> responseClass) {

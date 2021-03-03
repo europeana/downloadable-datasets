@@ -35,11 +35,12 @@ public class SetsUtility {
      * @param path path of the file
      * @return lastharvestDate or " " if not present
      */
-    public static String getLastHarvestDate(String path) {
+    public static String getLastHarvestDate(String path, String set) {
         try {
             return Files.readString(Paths.get(path));
         } catch (NoSuchFileException e) {
-            LOG.error("{} file doesn't exist. Harvesting ALL sets for first time" , Constants.HARVEST_DATE_FILENAME);
+            String msg = (set.isEmpty() || set.equals("ALL")) ? "ALL" : set;
+            LOG.error("{} file doesn't exist. Harvesting {} sets " , Constants.HARVEST_DATE_FILENAME, msg);
         } catch (IOException e) {
                 LOG.error("Error reading the lastHarvestDate file", e);
         }
@@ -64,6 +65,7 @@ public class SetsUtility {
     /**
      * gets the list of last harvested datasets
      * fetches the md5 checksum files from the source folder
+     * By default the source folder is XML
      *
      * @return list of all datasets harvested last time
      */
@@ -84,7 +86,9 @@ public class SetsUtility {
     /**
      * gets the list of de-published sets.
      * Compares with the existing list of dataset with the previously downloaded list of dataset
+     * By default we will compare with XML folder to get the last harvested Sets
      *
+     * @param directoryLocation XML folder location by default
      * @return list of all de-published dataset
      */
     public static List<String> getSetsToBeDeleted(OAIPMHServiceClient oaipmhServer, String directoryLocation, int logProgressInterval) {
@@ -101,17 +105,18 @@ public class SetsUtility {
      * Deletes the list of sets provided.
      * Deletes .md5sum file for that set from the source folder
      *
-     * @param directoryLocation folder location where file is present
+     * @param directoryLocation location of the folder
      */
-    public static void deleteDataset(List<String> setsToBeDeleted, String directoryLocation) {
+    public static void deleteDataset(List<String> setsToBeDeleted, String directoryLocation, String fileFormat) {
         for (String set : setsToBeDeleted) {
             try {
-                LOG.info("Deleting md5 file  : {} ", set + Constants.CHECKSUM_EXTENSION);
-                String fileName = directoryLocation + Constants.PATH_SEPERATOR + set + Constants.CHECKSUM_EXTENSION;
+                LOG.info("Deleting md5 file {}.{} in {} ", set, Constants.CHECKSUM_EXTENSION, fileFormat);
+                String fileName = SetsUtility.getFolderName(directoryLocation, fileFormat)
+                        + Constants.PATH_SEPERATOR + set + Constants.CHECKSUM_EXTENSION;
                 Path md5sumFile = Paths.get(fileName);
                 Files.delete(md5sumFile);
             } catch (IOException e) {
-               LOG.error("Error deleting file {} ", set, e);
+               LOG.error("Error deleting md5 file {} in {} ", set, fileFormat);
             }
         }
     }
@@ -157,14 +162,27 @@ public class SetsUtility {
     }
 
     /**
+     *  retruns the zips path based on fileFormat
+     * for TTL : directoryLocation/TTL/set.zip
+     * For XML : directoryLocation/XML/set.zip
+     *
+     * @param directoryLocation folder location where file is present
+     * @param fileFormat file format
+     */
+    public static String getZipsFolder(String directoryLocation, String fileFormat, String setIdentifier) {
+        String zipPath = SetsUtility.getFolderName(directoryLocation, fileFormat);
+        return zipPath + Constants.PATH_SEPERATOR + setIdentifier + Constants.ZIP_EXTENSION ;
+    }
+
+    /**
      * Returns the sets along with their status
      *
      * @param retriedSets The sets retried from the FailedSets.csv file
      * @param directoryLocation folder location where file is present
      */
-    public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation, String fileFormat){
+    public static String getRetriedSetsStatus(List<String> retriedSets, String directoryLocation){
         StringBuilder status = new StringBuilder();
-        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(SetsUtility.getFolderName(directoryLocation, fileFormat)));
+        List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
         status.append("\n");
         if (failedSets.isEmpty()){
             LOG.info("All the {} failed sets are harvested successfully", retriedSets.size());

@@ -21,7 +21,7 @@ public class ZipUtility {
     }
 
     /**
-     *  method to write in the zip
+     * method to write in the zip
      */
     public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record record, String fileFormat) {
         try {
@@ -37,6 +37,7 @@ public class ZipUtility {
     /**
      * converts the Record metadata into turtle if fileFormat is TTL.
      * Otherwise the return the default metadata
+     *
      * @return metadata
      */
     private static String dataToWriteInZip(String metadata, String fileFormat) {
@@ -48,6 +49,7 @@ public class ZipUtility {
 
     /**
      * the name of the file depending upon the extension provided
+     *
      * @return String
      */
     private static String getEntryName(Record record, String fileExtension) {
@@ -85,22 +87,20 @@ public class ZipUtility {
     private static String getMD5Sum(String file) {
         MessageDigest digest;
         String checksum = null;
-        try(InputStream is = new FileInputStream(new File(file))) {
+        try (InputStream is = new FileInputStream(new File(file))) {
             digest = MessageDigest.getInstance("MD5");
             byte[] buffer = new byte[1024];
             int read = 0;
-            while( (read = is.read(buffer)) > 0) {
+            while ((read = is.read(buffer)) > 0) {
                 digest.update(buffer, 0, read);
             }
             byte[] md5sum = digest.digest();
             BigInteger bigInt = new BigInteger(1, md5sum);
             checksum = bigInt.toString(16);
-        }
-        catch(IOException e) {
+        } catch (IOException e) {
             LOG.error("Unable to process file for MD5", e);
-        }
-        catch (NoSuchAlgorithmException e) {
-            LOG.error( "Error while generating MD5", e);
+        } catch (NoSuchAlgorithmException e) {
+            LOG.error("Error while generating MD5", e);
         }
         return checksum;
     }
