@@ -73,10 +73,26 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
     }
 
-    private void initThreadPool() {
+    /**
+     * initiates thread pool
+     * if threads <1 ; threads = 1
+     * if no Of sets to be harvested <= no of threads ; threads = no Of sets
+     * this is done to optimise the number of threads, when selective update will run.
+     *
+     * Example : If there are 5 sets to be harvested and threads are 30.
+     * Having 5 threads to harvest each one of them would be faster
+     * than one thread, to harvest all 5.
+     * @param noOfSets
+     */
+    private void initThreadPool(int noOfSets) {
         // init thread pool
         if (threads < 1) {
             threads = 1;
+        }
+        if (noOfSets < threads) {
+            LOG.info("No Of Sets to be harvested is less than the configured threads. Sets size : {}. Threads : {} ",noOfSets, threads);
+            threads = noOfSets;
+            LOG.info("Optimised the thread count to {} ", threads);
         }
         threadPool = Executors
                 .newFixedThreadPool(threads);
@@ -121,7 +137,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
-        initThreadPool();
         long counter = 0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
@@ -136,6 +151,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (setsFromListSets.isEmpty()) {
             setsFromListSets = getSetsFromListSet(oaipmhServer, lastHarvestDate);
         }
+        initThreadPool(setsFromListSets.size());
         DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
 
         if (! setsFromListSets.isEmpty()) {
@@ -192,7 +208,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         LOG.info("ListRecords for all {} sets executed in {}. Harvested {} sets." ,status.getNoOfSets(), timeElapsed, status.getSetsHarvested() );
         return status;
     }
-
 
     /**
      * gets the list of sets to be execeuted
