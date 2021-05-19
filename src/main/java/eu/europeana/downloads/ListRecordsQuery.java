@@ -78,6 +78,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
      * if threads <1 ; threads = 1
      * if no Of sets to be harvested <= no of threads ; threads = no Of sets
      * this is done to optimise the number of threads, when selective update will run.
+     * if No of sets are 0 the thread count is 1.
      *
      * Example : If there are 5 sets to be harvested and threads are 30.
      * Having 5 threads to harvest each one of them would be faster
@@ -92,6 +93,9 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (noOfSets < threads) {
             LOG.info("No Of Sets to be harvested is less than the configured threads. Sets size : {}. Threads : {} ",noOfSets, threads);
             threads = noOfSets;
+            if(noOfSets < 1) {
+                threads = 1;
+            }
             LOG.info("Optimised the thread count to {} ", threads);
         }
         threadPool = Executors
@@ -133,7 +137,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 String.valueOf(status.getNoOfSets()),
                 String.valueOf(status.getStartTime()),
                 status.getTimeElapsed(),
-                String.valueOf(setsHarvested));
+                String.valueOf(setsHarvested),
+                SetsUtility.getTabularData(status));
     }
 
     private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
@@ -174,26 +179,32 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             // invoke a separate thread for each provider
             results = threadPool.invokeAll(tasks);
             List<String> setsDownloaded = new ArrayList<>();
-                ListRecordsResult listRecordsResult;
-                for (Future<ListRecordsResult> result : results) {
-                    listRecordsResult = result.get();
-                    LOG.info("Executor finished with {} errors in {} sec.",
-                            listRecordsResult.getErrors(), listRecordsResult.getTime());
-                    counter += perThread;
-                    // get the successfully downloaded sets
+            ListRecordsResult listRecordsResult;
+            for (Future<ListRecordsResult> result : results) {
+                listRecordsResult = result.get();
+                LOG.info("Executor finished with {} errors in {} sec.",
+                        listRecordsResult.getErrors(), listRecordsResult.getTime());
+                counter += perThread;
+                // get the successfully downloaded sets
                 if(StringUtils.isNotEmpty(listRecordsResult.getSetsDownloaded())) {
                     setsDownloaded.addAll(Arrays.asList(listRecordsResult.getSetsDownloaded().split("\\s*,\\s*")));
                 }
                 logger.logProgress(counter);
             }
+            // setsDownloaded only contains successfully downloaded sets
+            status.setSetsRecordCountMap(getRecordsCount(setsDownloaded));
             status.setSetsHarvested(setsDownloaded.size());
             getFailedSets(setsFromListSets, setsDownloaded, directoryLocation);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOG.error("Interrupted.", e);
-            } catch (ExecutionException e) {
-                LOG.error("Problem with task thread execution.", e);
-            }
+            // After getFailedSets(), setsFromListSets contains failed sets now
+            // fail safe check
+            // if successful sets + failed sets is not equal to total list sets size, log an error
+            failSafeCheck(status.getNoOfSets(), status.getSetsHarvested(), setsFromListSets.size());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("Interrupted.", e);
+        } catch (ExecutionException e) {
+           LOG.error("Problem with task thread execution.", e);
+        }
         }
 
         // store the new harvest start date in the file
@@ -207,6 +218,34 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         status.setTimeElapsed(timeElapsed);
         LOG.info("ListRecords for all {} sets executed in {}. Harvested {} sets." ,status.getNoOfSets(), timeElapsed, status.getSetsHarvested() );
         return status;
+    }
+
+    /**
+     * Returns the Map<String,Long> with sets and the record count
+     * get detailed record count for report
+     *
+     * @param setsDownloaded
+     * @return
+     */
+    private Map<String,Long> getRecordsCount(List<String> setsDownloaded) {
+        Map<String,Long> setsRecordsCountMap = new HashMap<>();
+        for (String dataset: setsDownloaded) {
+            long records = ZipUtility.getNumberOfEntriesInZip(SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE),
+                    dataset + Constants.ZIP_EXTENSION);
+            setsRecordsCountMap.put(dataset,records);
+        }
+        return setsRecordsCountMap;
+    }
+
+    /**
+     * Logs an error if successful sets + failed sets is not equal
+     * to total list sets size
+     */
+    private void failSafeCheck(int totalsSets, int setsHarvested, int failedsets) {
+        if(((setsHarvested + failedsets) != totalsSets)) {
+            LOG.error("Something went wrong. Sets size mismatch. Total Sets to be harvested {}, " +
+                    "Successful harvested sets : {}, Failed Sets : {}", totalsSets, setsHarvested,failedsets);
+        }
     }
 
     /**
