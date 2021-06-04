@@ -38,6 +38,9 @@ class MailConfig {
                 "%n%n" +
                 "Datasets Harvested: %s" +
                 "%n%n" +
+                "Datasets and Records Count : %n%n" +
+                "%s" +
+                "%n%n" +
                 "The Europeana API Team");
         return message;
     }

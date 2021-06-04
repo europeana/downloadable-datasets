@@ -62,4 +62,9 @@ public class Constants {
     public static final String DOWNLOADS_SUBJECT = "Downloads Run Status Report ";
     public static final String FAILED_SETS_RETRY_SUBJECT = "Failed Sets Retry Status Report ";
 
+    //Table constants
+    public static final String TABLE_DATA_FORMAT         = "%-15s%-15s%-15s\n";
+    public static final String TABLE_LINE                = "--------------------------------------------\n";
+    public static final String TABLE_SEPERATOR           = "  |";
+
 }

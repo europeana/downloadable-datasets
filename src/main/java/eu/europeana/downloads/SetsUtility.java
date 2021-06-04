@@ -14,10 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -205,5 +202,32 @@ public class SetsUtility {
             LOG.info("{} Failed sets now : {} ", failedSets.size(), failedSets);
         }
         return status.toString();
+    }
+
+    /**
+     * Returns the string in the format of table including sets
+     * and the record count of the successfully harvested datasets
+     *
+     * @param status
+     * @return
+     */
+    public static String getTabularData(DownloadsStatus status) {
+        StringBuilder tableData = new StringBuilder();
+        if (!status.getSetsRecordCountMap().isEmpty()) {
+            tableData.append(Constants.TABLE_LINE);
+            tableData.append(String.format(Constants.TABLE_DATA_FORMAT, "Sets",Constants.TABLE_SEPERATOR, "Records"));
+            tableData.append(Constants.TABLE_LINE);
+            long totalRecords = 0;
+            for (Map.Entry<String, Long> entry : status.getSetsRecordCountMap().entrySet()) {
+                tableData.append(String.format(Constants.TABLE_DATA_FORMAT, entry.getKey(), Constants.TABLE_SEPERATOR, entry.getValue()));
+                totalRecords += entry.getValue();
+            }
+            tableData.append(Constants.TABLE_LINE);
+            tableData.append(String.format(Constants.TABLE_DATA_FORMAT, "Total Datasets", Constants.TABLE_SEPERATOR,  "Total Records"));
+            tableData.append(Constants.TABLE_LINE);
+            tableData.append(String.format(Constants.TABLE_DATA_FORMAT, status.getSetsHarvested(), Constants.TABLE_SEPERATOR, totalRecords));
+            tableData.append(Constants.TABLE_LINE);
+        }
+        return tableData.toString();
     }
 }

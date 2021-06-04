@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class ZipUtility {
@@ -103,5 +104,20 @@ public class ZipUtility {
             LOG.error("Error while generating MD5", e);
         }
         return checksum;
+    }
+
+    /**
+     * returns the number of entries in a zip file
+     * @param path
+     * @param zipName
+     * @return
+     */
+    public static long getNumberOfEntriesInZip(String path, String zipName) {
+        try(ZipFile zipFile = new ZipFile(path + Constants.PATH_SEPERATOR + zipName)) {
+            return zipFile.size();
+        } catch (IOException e) {
+            LOG.error("Error reading the zip file {}", zipName, e);
+        }
+        return 0;
     }
 }

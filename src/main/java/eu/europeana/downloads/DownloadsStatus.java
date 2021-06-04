@@ -1,6 +1,8 @@
 package eu.europeana.downloads;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DownloadsStatus {
 
@@ -9,6 +11,7 @@ public class DownloadsStatus {
     private Date startTime;
     private String timeElapsed;
     private String retriedSetsStatus;
+    Map<String, Long> setsRecordCountMap = new HashMap<>();
 
     public DownloadsStatus() {
 
@@ -58,6 +61,26 @@ public class DownloadsStatus {
 
     public void setRetriedSetsStatus(String retriedSetsStatus) {
         this.retriedSetsStatus = retriedSetsStatus;
+    }
+
+    public Map<String, Long> getSetsRecordCountMap() {
+        return setsRecordCountMap;
+    }
+
+    public void setSetsRecordCountMap(Map<String, Long> setsRecordCountMap) {
+        this.setsRecordCountMap = setsRecordCountMap;
+    }
+
+    @Override
+    public String toString() {
+        return "DownloadsStatus{" +
+                "noOfSets=" + noOfSets +
+                ", setsHarvested=" + setsHarvested +
+                ", startTime=" + startTime +
+                ", timeElapsed='" + timeElapsed + '\'' +
+                ", retriedSetsStatus='" + retriedSetsStatus + '\'' +
+                ", setsRecordCountMap=" + setsRecordCountMap +
+                '}';
     }
 }
 
