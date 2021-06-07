@@ -27,7 +27,7 @@ class MailConfig {
             message.setCc(copyTo);
         }
         message.setText(
-                "Downloads Status Report :" +
+                "Downloads Status Report : %n===========================%n" +
                 "%n%n" +
                 "Number of datasets: %s" +
                 "%n%n" +
