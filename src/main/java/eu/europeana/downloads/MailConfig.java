@@ -28,7 +28,6 @@ class MailConfig {
         }
         message.setText(
                 "Downloads Status Report : %n===========================%n" +
-                "%n%n" +
                 "Number of datasets: %s" +
                 "%n%n" +
                 "Start Time:  %s" +
