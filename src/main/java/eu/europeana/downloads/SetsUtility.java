@@ -215,7 +215,7 @@ public class SetsUtility {
         StringBuilder tableData = new StringBuilder();
         if (!status.getSetsRecordCountMap().isEmpty()) {
             tableData.append(Constants.TABLE_LINE);
-            tableData.append(String.format(Constants.TABLE_DATA_FORMAT, "Sets",Constants.TABLE_SEPERATOR, "Records"));
+            tableData.append(String.format(Constants.TABLE_DATA_FORMAT, "Set_Id",Constants.TABLE_SEPERATOR, "No_of_Records"));
             tableData.append(Constants.TABLE_LINE);
             long totalRecords = 0;
             for (Map.Entry<String, Long> entry : status.getSetsRecordCountMap().entrySet()) {
@@ -223,11 +223,12 @@ public class SetsUtility {
                 totalRecords += entry.getValue();
             }
             tableData.append(Constants.TABLE_LINE);
-            tableData.append(String.format(Constants.TABLE_DATA_FORMAT, "Total Datasets", Constants.TABLE_SEPERATOR,  "Total Records"));
+            tableData.append(String.format(Constants.TABLE_DATA_FORMAT, "Total", Constants.TABLE_SEPERATOR,  " "));
             tableData.append(Constants.TABLE_LINE);
             tableData.append(String.format(Constants.TABLE_DATA_FORMAT, status.getSetsHarvested(), Constants.TABLE_SEPERATOR, totalRecords));
             tableData.append(Constants.TABLE_LINE);
         }
+        System.out.println(tableData.toString());
         return tableData.toString();
     }
 }

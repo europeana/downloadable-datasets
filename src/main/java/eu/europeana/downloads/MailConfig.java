@@ -26,9 +26,8 @@ class MailConfig {
         if (StringUtils.isNotEmpty(copyTo)) {
             message.setCc(copyTo);
         }
-        message.setText("Downloads run finished. " +
-                "%n%n" +
-                "Downloads Status Report : %n===========================%n" +
+        message.setText(
+                "Downloads Status Report :" +
                 "%n%n" +
                 "Number of datasets: %s" +
                 "%n%n" +
@@ -38,7 +37,6 @@ class MailConfig {
                 "%n%n" +
                 "Datasets Harvested: %s" +
                 "%n%n" +
-                "Datasets and Records Count : %n%n" +
                 "%s" +
                 "%n%n" +
                 "The Europeana API Team");
