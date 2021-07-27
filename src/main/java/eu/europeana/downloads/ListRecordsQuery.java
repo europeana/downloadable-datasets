@@ -76,10 +76,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     /**
      * initiates thread pool
      * if threads <1 ; threads = 1
-     * if no Of sets to be harvested <= no of threads ; threads = (no Of sets + 1)
-     * thread count shall be more than 1 always to run selective update.
-     * hence if failed set = 1 is exceuted before, thread count should be atleast two for selective update
-     *
+     * For selective Update :
+     * if no Of sets to be harvested <= no of threads ; threads = no Of sets
      * this is done to optimise the number of threads, when selective update will run.
      * if No of sets are 0 the thread count is 1.
      *
@@ -88,15 +86,16 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
      * than one thread, to harvest all 5.
      * @param noOfSets
      */
-    private void initThreadPool(int noOfSets) {
+    private void initThreadPool(int noOfSets, boolean selectiveUpdate) {
         // init thread pool
         if (threads < 1) {
             threads = 1;
         }
-        if (noOfSets < threads) {
-            LOG.info("No Of Sets to be harvested is less than the configured threads. Sets size : {}. Threads : {} ",noOfSets, threads);
-            threads = noOfSets+1;
-            if(noOfSets < 1) {
+        // optimise threads only for selective Update
+        if (selectiveUpdate && noOfSets < threads) {
+            LOG.info("No Of Sets to be harvested is less than the configured threads. Sets size : {}. Threads : {} ", noOfSets, threads);
+            threads = noOfSets;
+            if (noOfSets < 1) {
                 threads = 1;
             }
             LOG.info("Optimised the thread count to {} ", threads);
@@ -147,6 +146,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
         long counter = 0;
         long start = System.currentTimeMillis();
+        boolean selectiveUpdate = false;
         ProgressLogger logger = new ProgressLogger("Multiple sets", -1, logProgressInterval);
         // make a deep copy of sets
         List<String> setsFromListSets = new ArrayList<>();
@@ -158,8 +158,9 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // ie; either set is set to ALL or empty
         if (setsFromListSets.isEmpty()) {
             setsFromListSets = getSetsFromListSet(oaipmhServer, lastHarvestDate);
+            selectiveUpdate = true;
         }
-        initThreadPool(setsFromListSets.size());
+        initThreadPool(setsFromListSets.size(), selectiveUpdate);
         DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
 
         if (! setsFromListSets.isEmpty()) {
