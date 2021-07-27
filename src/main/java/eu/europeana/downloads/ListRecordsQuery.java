@@ -95,6 +95,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (selectiveUpdate && noOfSets < threads) {
             LOG.info("No Of Sets to be harvested is less than the configured threads. Sets size : {}. Threads : {} ", noOfSets, threads);
             threads = noOfSets;
+            // when there are no sets to update
             if (noOfSets < 1) {
                 threads = 1;
             }
