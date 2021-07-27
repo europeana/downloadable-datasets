@@ -76,7 +76,10 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     /**
      * initiates thread pool
      * if threads <1 ; threads = 1
-     * if no Of sets to be harvested <= no of threads ; threads = no Of sets
+     * if no Of sets to be harvested <= no of threads ; threads = (no Of sets + 1)
+     * thread count shall be more than 1 always to run selective update.
+     * hence if failed set = 1 is exceuted before, thread count should be atleast two for selective update
+     *
      * this is done to optimise the number of threads, when selective update will run.
      * if No of sets are 0 the thread count is 1.
      *
@@ -92,7 +95,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
         if (noOfSets < threads) {
             LOG.info("No Of Sets to be harvested is less than the configured threads. Sets size : {}. Threads : {} ",noOfSets, threads);
-            threads = noOfSets;
+            threads = noOfSets+1;
             if(noOfSets < 1) {
                 threads = 1;
             }
