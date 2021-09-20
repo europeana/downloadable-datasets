@@ -161,6 +161,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             setsFromListSets = getSetsFromListSet(oaipmhServer, lastHarvestDate);
             selectiveUpdate = true;
         }
+        LOG.info("Sets to be harvested : {} ", setsFromListSets);
         initThreadPool(setsFromListSets.size(), selectiveUpdate);
         DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
 
