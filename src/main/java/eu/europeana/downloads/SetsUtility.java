@@ -107,7 +107,7 @@ public class SetsUtility {
     public static void deleteDataset(List<String> setsToBeDeleted, String directoryLocation, String fileFormat) {
         for (String set : setsToBeDeleted) {
             try {
-                LOG.info("Deleting md5 file {}.{} in {} ", set, Constants.CHECKSUM_EXTENSION, fileFormat);
+                LOG.info("Deleting md5 file {}{} in {} ", set, Constants.CHECKSUM_EXTENSION, fileFormat);
                 String fileName = SetsUtility.getFolderName(directoryLocation, fileFormat)
                         + Constants.PATH_SEPERATOR + set + Constants.CHECKSUM_EXTENSION;
                 Path md5sumFile = Paths.get(fileName);
@@ -228,7 +228,6 @@ public class SetsUtility {
             tableData.append(String.format(Constants.TABLE_DATA_FORMAT, status.getSetsHarvested(), Constants.TABLE_SEPERATOR, totalRecords));
             tableData.append(Constants.TABLE_LINE);
         }
-        System.out.println(tableData.toString());
         return tableData.toString();
     }
 }
