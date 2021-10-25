@@ -37,7 +37,7 @@ public class SetsUtility {
             return Files.readString(Paths.get(path));
         } catch (NoSuchFileException e) {
             String msg = (set.isEmpty() || set.equals("ALL")) ? "ALL" : set;
-            LOG.error("{} file doesn't exist. Harvesting {} sets " , Constants.HARVEST_DATE_FILENAME, msg);
+            LOG.error("{} file doesn't exist. Harvesting sets : {} " , Constants.HARVEST_DATE_FILENAME, msg);
         } catch (IOException e) {
                 LOG.error("Error reading the lastHarvestDate file", e);
         }
