@@ -66,8 +66,10 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @PostConstruct
     public final void initSets() {
-        lastHarvestDate = (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
-                + Constants.HARVEST_DATE_FILENAME, set)).trim();
+//        lastHarvestDate = (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
+//                + Constants.HARVEST_DATE_FILENAME, set)).trim();
+        // TODO remove this after ttl files are downloaded
+        lastHarvestDate = "";
         if (! set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
@@ -268,7 +270,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // if lastHarvestDate is empty, this is the first time we're running the downloads, so get everything
         if (lastHarvestDate.isEmpty()) {
             setsFromListSets = setsQuery.getSets(oaipmhServer, null, null);
-            LOG.info("ALL {} sets ready for harvest.", setsFromListSets.size());
+            LOG.info("There is no lastHarvestDate. ALL {} sets ready for harvest.", setsFromListSets.size());
         }
         // Check for Updated, newly created and de-published datasets.
         // For de-published dataset XML folder is read
