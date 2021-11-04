@@ -163,7 +163,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             setsFromListSets = getSetsFromListSet(oaipmhServer, lastHarvestDate);
             selectiveUpdate = true;
         }
-        LOG.info("Sets to be harvested : {} ", setsFromListSets);
+        LOG.info("{} Sets to be harvested : {} ", setsFromListSets.size(), setsFromListSets);
         initThreadPool(setsFromListSets.size(), selectiveUpdate);
         DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
 
@@ -238,7 +238,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private Map<String,Long> getRecordsCount(List<String> setsDownloaded) {
         Map<String,Long> setsRecordsCountMap = new HashMap<>();
         for (String dataset: setsDownloaded) {
-            long records = ZipUtility.getNumberOfEntriesInZip(SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE),
+            long records = ZipUtility.getNumberOfEntriesInZip(SetsUtility.getFolderName(directoryLocation, Constants.TTL_FILE),
                     dataset + Constants.ZIP_EXTENSION);
             setsRecordsCountMap.put(dataset,records);
         }
