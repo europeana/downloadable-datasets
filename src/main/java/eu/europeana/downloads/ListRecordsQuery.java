@@ -66,10 +66,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @PostConstruct
     public final void initSets() {
-//        lastHarvestDate = (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
-//                + Constants.HARVEST_DATE_FILENAME, set)).trim();
-        // TODO remove this after ttl files are downloaded
-        lastHarvestDate = "";
+        lastHarvestDate = (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
+                + Constants.HARVEST_DATE_FILENAME, set)).trim();
         if (! set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
@@ -238,7 +236,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private Map<String,Long> getRecordsCount(List<String> setsDownloaded) {
         Map<String,Long> setsRecordsCountMap = new HashMap<>();
         for (String dataset: setsDownloaded) {
-            long records = ZipUtility.getNumberOfEntriesInZip(SetsUtility.getFolderName(directoryLocation, Constants.TTL_FILE),
+            long records = ZipUtility.getNumberOfEntriesInZip(SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE),
                     dataset + Constants.ZIP_EXTENSION);
             setsRecordsCountMap.put(dataset,records);
         }
@@ -303,17 +301,17 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         ListRecords responseObject = response.getListRecords();
         // Create Both zips
         // TODO un-comment once all ttl files are downloaded
-       // String xmlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.XML_FILE, setIdentifier);
+        String xmlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.XML_FILE, setIdentifier);
         String ttlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.TTL_FILE, setIdentifier);
 
-        try (//final ZipOutputStream xmlZout = new ZipOutputStream(new FileOutputStream(new File(xmlZipName)));
+        try (final ZipOutputStream xmlZout = new ZipOutputStream(new FileOutputStream(new File(xmlZipName)));
              final ZipOutputStream ttlZout = new ZipOutputStream(new FileOutputStream(new File(ttlZipName)));
-            // OutputStreamWriter writer = new OutputStreamWriter(xmlZout);
+             OutputStreamWriter writer = new OutputStreamWriter(xmlZout);
              OutputStreamWriter writer1 = new OutputStreamWriter(ttlZout)) {
 
               //writing in ZIP
               for(Record record : responseObject.getRecords()) {
-                 //   ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
+                    ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
                     ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
               }
              if (responseObject != null) {
@@ -331,7 +329,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                     responseObject = response.getListRecords();
                         //writing in ZIP
                         for (Record record : responseObject.getRecords()) {
-                         //   ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
+                            ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
                             ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
                     }
                     if (responseObject == null) {
@@ -347,7 +345,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             LOG.error("Error creating outputStreams ", e);
         }
         //create MD5Sum file for the XML and TTL zip
-       // ZipUtility.createMD5SumFile(xmlZipName);
+        ZipUtility.createMD5SumFile(xmlZipName);
         ZipUtility.createMD5SumFile(ttlZipName);
 
         LOG.info("ListRecords for set {} executed in {}. Harvested {} records.", setIdentifier,
