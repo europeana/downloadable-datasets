@@ -300,7 +300,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         ListRecordsResponse response = oaipmhServer.getListRecordRequest(request);
         ListRecords responseObject = response.getListRecords();
         // Create Both zips
-        // TODO un-comment once all ttl files are downloaded
         String xmlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.XML_FILE, setIdentifier);
         String ttlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.TTL_FILE, setIdentifier);
 
