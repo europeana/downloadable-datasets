@@ -217,12 +217,12 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
         // store the new harvest start date in the file
         // Currently not changing the lastHarvestDate if failed-sets or manually added sets are running
-//        if(sets.isEmpty()) {
+        if(sets.isEmpty()) {
             LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
             SetsUtility.writeNewHarvestDate(directoryLocation, start);
             LOG.info("Last Harvest date set to : "+ (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
                     + Constants.HARVEST_DATE_FILENAME, set)).trim());
-//        }
+        }
         clean();
         String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
         status.setTimeElapsed(timeElapsed);
@@ -304,20 +304,18 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         ListRecordsResponse response = oaipmhServer.getListRecordRequest(request);
         ListRecords responseObject = response.getListRecords();
         // Create Both zips
-        // TODO un-comment once all ttl files are downloaded
         String xmlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.XML_FILE, setIdentifier);
-//        String ttlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.TTL_FILE, setIdentifier);
+        String ttlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.TTL_FILE, setIdentifier);
 
         try (final ZipOutputStream xmlZout = new ZipOutputStream(new FileOutputStream(new File(xmlZipName)));
-//             final ZipOutputStream ttlZout = new ZipOutputStream(new FileOutputStream(new File(ttlZipName)));
-            OutputStreamWriter writer = new OutputStreamWriter(xmlZout))
-//             OutputStreamWriter writer1 = new OutputStreamWriter(ttlZout))
-        {
+             final ZipOutputStream ttlZout = new ZipOutputStream(new FileOutputStream(new File(ttlZipName)));
+             OutputStreamWriter writer = new OutputStreamWriter(xmlZout);
+             OutputStreamWriter writer1 = new OutputStreamWriter(ttlZout)){
 
               //writing in ZIP
               for(Record record : responseObject.getRecords()) {
                     ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
-//                    ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
+                    ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
               }
              if (responseObject != null) {
                 counter += responseObject.getRecords().size();
@@ -335,7 +333,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                         //writing in ZIP
                         for (Record record : responseObject.getRecords()) {
                             ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
-//                            ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
+                            ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
                     }
                     if (responseObject == null) {
 
@@ -351,7 +349,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
         //create MD5Sum file for the XML and TTL zip
         ZipUtility.createMD5SumFile(xmlZipName);
-//        ZipUtility.createMD5SumFile(ttlZipName);
+        ZipUtility.createMD5SumFile(ttlZipName);
 
         LOG.info("ListRecords for set {} executed in {}. Harvested {} records.", setIdentifier,
                 ProgressLogger.getDurationText(System.currentTimeMillis() - start), counter);
