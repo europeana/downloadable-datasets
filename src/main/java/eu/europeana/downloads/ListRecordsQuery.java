@@ -66,10 +66,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @PostConstruct
     public final void initSets() {
-//        lastHarvestDate = (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
-//                + Constants.HARVEST_DATE_FILENAME, set)).trim();
-        // TODO remove this after ttl files are downloaded
-        lastHarvestDate = "";
+        lastHarvestDate = (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
+                + Constants.HARVEST_DATE_FILENAME, set)).trim();
         if (! set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
@@ -310,7 +308,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         try (final ZipOutputStream xmlZout = new ZipOutputStream(new FileOutputStream(new File(xmlZipName)));
              final ZipOutputStream ttlZout = new ZipOutputStream(new FileOutputStream(new File(ttlZipName)));
              OutputStreamWriter writer = new OutputStreamWriter(xmlZout);
-             OutputStreamWriter writer1 = new OutputStreamWriter(ttlZout)){
+             OutputStreamWriter writer1 = new OutputStreamWriter(ttlZout)) {
 
               //writing in ZIP
               for(Record record : responseObject.getRecords()) {
