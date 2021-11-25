@@ -218,6 +218,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if(sets.isEmpty()) {
             LOG.info("Creating/Updating the {} file ", Constants.HARVEST_DATE_FILENAME);
             SetsUtility.writeNewHarvestDate(directoryLocation, start);
+            LOG.info("Last Harvest date set to : "+ (SetsUtility.getLastHarvestDate(directoryLocation + Constants.PATH_SEPERATOR
+                    + Constants.HARVEST_DATE_FILENAME, set)).trim());
         }
         clean();
         String timeElapsed = ProgressLogger.getDurationText(System.currentTimeMillis() - start);
