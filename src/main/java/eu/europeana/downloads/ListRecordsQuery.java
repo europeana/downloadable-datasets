@@ -279,7 +279,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                     SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE), logProgressInterval);
             // delete the de-published datasets from XML and TTL folders
             if (! setsToBeDeleted.isEmpty()) {
-                LOG.info("De-published datasets : {} ", setsToBeDeleted.size());
+                LOG.info("{} De-published datasets : {} ", setsToBeDeleted.size(), setsToBeDeleted);
                 SetsUtility.deleteDataset(setsToBeDeleted, directoryLocation, Constants.XML_FILE);
                 SetsUtility.deleteDataset(setsToBeDeleted, directoryLocation, Constants.TTL_FILE);
             } else {
