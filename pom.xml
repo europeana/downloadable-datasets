@@ -19,10 +19,10 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <oai-pmh.version>0.8.2-SNAPSHOT</oai-pmh.version>
+        <oai-pmh.version>0.8.1</oai-pmh.version>
         <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
         <jackson.version>2.12.1</jackson.version>
-        <apiCommons.version>0.3.9-SNAPSHOT</apiCommons.version>
+        <apiCommons.version>0.3.14</apiCommons.version>
 
         <spring.boot.mainclass>eu.europeana.downloads.DownloadsGenerator</spring.boot.mainclass>
     </properties>
