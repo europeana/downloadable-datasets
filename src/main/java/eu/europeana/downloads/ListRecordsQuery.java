@@ -376,6 +376,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     private static void getFailedSets(List<String> sets, List<String> setsDownloaded, String directoryLocation) {
         sets.removeAll(setsDownloaded);
         CSVFile.writeInCsv(sets,directoryLocation);
+        // log the new failed set file values
+        LOG.info("Failed sets file values : " + CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation)));
     }
 
     @PreDestroy
