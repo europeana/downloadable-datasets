@@ -1,6 +1,7 @@
 package eu.europeana.downloads;
 
 import eu.europeana.oaipmh.model.*;
+import eu.europeana.oaipmh.model.Record;
 import eu.europeana.oaipmh.model.response.GetRecordResponse;
 import eu.europeana.oaipmh.model.response.ListRecordsResponse;
 import org.apache.commons.lang3.StringUtils;
