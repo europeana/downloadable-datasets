@@ -19,7 +19,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <oai-pmh.version>0.7-SNAPSHOT</oai-pmh.version>
+        <oai-pmh.version>0.8.2</oai-pmh.version>
         <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
         <jackson.version>2.13.4</jackson.version>
         <apiCommons.version>0.3.14</apiCommons.version>
@@ -64,9 +64,15 @@
         </dependency>
 
         <dependency>
-            <groupId>eu.europeana.oai-pmh2</groupId>
-            <artifactId>common</artifactId>
+            <groupId>eu.europeana</groupId>
+            <artifactId>oai-pmh2-common</artifactId>
             <version>${oai-pmh.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>woodstox-core</artifactId>
+                    <groupId>com.fasterxml.woodstox</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
