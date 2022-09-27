@@ -1,6 +1,5 @@
 package eu.europeana.downloads;
 
-import com.ctc.wstx.util.StringUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import eu.europeana.oaipmh.model.RDFMetadata;
@@ -17,14 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +128,7 @@ public class OAIPMHServiceClient {
     }
 
     public ListRecordsResponse getListRecordRequest(String request) {
+        LOG.info("request: " + request);
         String responseAsString = restTemplate.getForObject(request, String.class);
         return XMLResponseParser.parseListRecordResponse(responseAsString);
     }
