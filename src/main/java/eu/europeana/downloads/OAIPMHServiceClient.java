@@ -128,7 +128,6 @@ public class OAIPMHServiceClient {
     }
 
     public ListRecordsResponse getListRecordRequest(String request) {
-        LOG.info("request: " + request);
         String responseAsString = restTemplate.getForObject(request, String.class);
         return XMLResponseParser.parseListRecordResponse(responseAsString);
     }
