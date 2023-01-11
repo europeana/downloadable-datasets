@@ -35,6 +35,9 @@ public class OAIPMHServiceClient {
     @Value("${sets-folder}")
     private String directoryLocation;
 
+    @Value("${execute-failed-sets}")
+    private boolean executeFailedSets;
+
     private RestTemplate restTemplate = new RestTemplate();
 
     private ObjectMapper mapper;
@@ -91,8 +94,9 @@ public class OAIPMHServiceClient {
         }
         SetsUtility.createFolders(directoryLocation);
 
-        // failed sets will not be retied in verb is Checksum
-        if (!StringUtils.equals(Constants.CHECKSUM_VERB, verbToExecute.getVerbName())) {
+        // failed sets will not be retied in verb is Checksum and if executeFailedSets is set to false
+        if (!StringUtils.equals(Constants.CHECKSUM_VERB, verbToExecute.getVerbName()) && executeFailedSets) {
+            LOG.info("Failed sets flow will be executed : verb {}, executeFailedSets {}", oaipmhServer);
             // First check for failed sets from previous run
             List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
             if (!failedSets.isEmpty()) {
