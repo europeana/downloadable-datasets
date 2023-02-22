@@ -175,7 +175,9 @@ public class XMLResponseParser {
         StringBuilder metadataValue = new StringBuilder(Constants.XML_DECLARATION);
 
         if (StringUtils.contains(response, identifier)) {
-            int metadataStartIndex = StringUtils.indexOf(response, "<metadata>", StringUtils.indexOf(response, identifier));
+            // get the exact index of the identifier and  fetch the first metadata value from there. See : EA-3359
+            int recordStartIndex = StringUtils.indexOf(response, "<identifier>" + identifier + "</identifier>");
+            int metadataStartIndex = StringUtils.indexOf(response, "<metadata>", recordStartIndex);
             int metadataEndIndex = StringUtils.indexOf(response, "</metadata>", metadataStartIndex);
             String value = StringUtils.substring(response, metadataStartIndex + 10, metadataEndIndex);
             metadataValue.append(value);
