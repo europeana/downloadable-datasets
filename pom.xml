@@ -10,7 +10,7 @@
 
 
     <artifactId>downloads</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>2.0</version>
     <name>Downloadable CHO data sets generator</name>
     <packaging>jar</packaging>
 
