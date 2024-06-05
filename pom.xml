@@ -19,7 +19,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <oai-pmh.version>0.8.2</oai-pmh.version>
+        <oai-pmh.version>0.9.1</oai-pmh.version>
         <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
         <jackson.version>2.14.2</jackson.version>
         <apiCommons.version>0.3.14</apiCommons.version>
@@ -65,7 +65,7 @@
 
         <dependency>
             <groupId>eu.europeana</groupId>
-            <artifactId>oai-pmh2-common</artifactId>
+            <artifactId>oai-pmh-common</artifactId>
             <version>${oai-pmh.version}</version>
             <exclusions>
                 <exclusion>
@@ -92,7 +92,6 @@
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
