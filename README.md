@@ -6,9 +6,4 @@ This project uses the [Europeana OAI-PMH service](https://api.europeana.eu/oai/r
 <b>Please do not use this software to generate your own sets because this will 
 will take multiple days to complete and requires more than 500 GB of disk space.</b> 
 
-Instead you can download the sets we generate periodically for you (download location will be made available later
-as this project is still 'work in progress')
-
-
-
-
+Instead you can download the sets via http://download.europeana.eu/ All sets are updated on a weekly basis.
