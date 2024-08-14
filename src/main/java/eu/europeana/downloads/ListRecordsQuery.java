@@ -145,11 +145,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 status.getTimeElapsed(),
                 String.valueOf(setsHarvested),
                 SetsUtility.getTabularData(status));
-        statusReportService.sendSlackMessage(String.valueOf(status.getNoOfSets()),
-            String.valueOf(status.getStartTime()),
-            status.getTimeElapsed(),
-            String.valueOf(setsHarvested),
-            SetsUtility.getTabularData(status));
+        statusReportService.publishStatusReportToSlack(SetsUtility.getSetRecordDataJson(status));
 
     }
 
@@ -343,7 +339,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                             ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
                     }
                     if (responseObject == null) {
-
                         break;
                     }
                     counter += responseObject.getRecords().size();

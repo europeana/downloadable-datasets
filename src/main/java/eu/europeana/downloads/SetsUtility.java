@@ -230,4 +230,57 @@ public class SetsUtility {
         }
         return tableData.toString();
     }
+
+    public static String getSetRecordDataJson(DownloadsStatus status){
+        StringBuilder jsonOutPut = new StringBuilder();
+
+        String begin="{\"blocks\":[";
+        String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: Downloads Status Report\",\"type\":\"plain_text\"},\"type\":\"header\"}";
+        String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Number of datasets: %s\"}}";
+        String harvestCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Datasets Harvested: %s\"}}";
+        String tableHeader = "{\"fields\": [{\"text\": \"*Set Id*\",\"type\": \"mrkdwn\"},{\"text\": \"*No. of Records*\",\"type\": \"mrkdwn\"}],\"type\": \"section\"}";
+        String tableRow = "{\"fields\":[{\"text\":\"%s\",\"type\":\"mrkdwn\"},{\"text\":\"%s\",\"type\":\"mrkdwn\"}],\"type\":\"section\"}";
+        String tableFooter = "{\"fields\": [{\"text\": \"*Total*\",\"type\": \"mrkdwn\"},{\"text\": \"%s\",\"type\": \"mrkdwn\"}],\"type\": \"section\"}";
+        String rowDivider = "{\"type\": \"divider\"}";
+        String end="]}";
+        String comma = ",";
+
+        jsonOutPut.append(begin);
+        jsonOutPut.append(rowDivider);
+        jsonOutPut.append(comma);
+
+        jsonOutPut.append(reportHeader);
+        jsonOutPut.append(comma);
+
+        jsonOutPut.append(String.format(datasetCount,status.getNoOfSets()));
+        jsonOutPut.append(comma);
+
+        jsonOutPut.append(String.format(harvestCount,status.getSetsHarvested()));
+        jsonOutPut.append(comma);
+
+        jsonOutPut.append(tableHeader);
+        jsonOutPut.append(comma);
+        jsonOutPut.append(rowDivider);
+        jsonOutPut.append(comma);
+
+        long totalRecords = 0;
+        if (!status.getSetsRecordCountMap().isEmpty()) {
+            for (Map.Entry<String, Long> entry : status.getSetsRecordCountMap().entrySet()) {
+                jsonOutPut.append(String.format(tableRow,entry.getKey(),entry.getValue()));
+                jsonOutPut.append(comma);
+                totalRecords += entry.getValue();
+            }
+        }
+
+        jsonOutPut.append(rowDivider);
+        jsonOutPut.append(comma);
+        jsonOutPut.append(String.format(tableFooter,totalRecords));
+        jsonOutPut.append(comma);
+        jsonOutPut.append(rowDivider);
+        jsonOutPut.append(end);
+
+        return jsonOutPut.toString();
+    }
+
+
 }

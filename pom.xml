@@ -19,8 +19,9 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <oai-pmh.version>0.9.2</oai-pmh.version>
-        <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
+        <oai-pmh.version>0.9.1</oai-pmh.version>
+<!--        <spring-boot.version>2.2.2.RELEASE</spring-boot.version>-->
+        <spring-boot.version>3.3.0</spring-boot.version>
         <jackson.version>2.14.2</jackson.version>
         <apiCommons.version>0.3.14</apiCommons.version>
 
@@ -41,10 +42,7 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-log4j2</artifactId>
-        </dependency>
+
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

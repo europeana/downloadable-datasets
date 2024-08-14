@@ -2,18 +2,18 @@ package eu.europeana.downloads;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+
 import org.springframework.stereotype.Service;
 
 @Service
 public class MailService {
     private static final Logger LOG = LogManager.getLogger(MailService.class);
 
-    @Autowired
-    private JavaMailSender mailSender;
+  //  @Autowired
+  //  private JavaMailSender mailSender;
 
     /**
      * This method will send compose and send the message
@@ -28,7 +28,7 @@ public class MailService {
             message.setSubject(subject);
             message.setText(messageBody);
 
-            mailSender.send(message);
+           // mailSender.send(message);
         } catch (MailException e) {
             LOG.error("A problem prevented sending a confirmation {} email to {}", subject, to, e);
         }

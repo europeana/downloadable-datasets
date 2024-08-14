@@ -17,27 +17,6 @@ public class StatusReportService {
   private static final Logger LOG = LogManager.getLogger(StatusReportService.class);
    private final StatusReportConfig config;
 
-   /*
-   Indicate the nr of datasets updated and deleted
-
-Show a table with the Dataset ID and nr of records
-
-There is no need to indicate the date because slack shows it. I also doubt the need for the elapsed time.
-    */
-
-   private  static final String messageTemplate="\"{\"text\":\"" +"Downloads Status Report : %n===========================%n" +
-       "Number of datasets: %s" +
-       "%n%n" +
-       "Start Time:  %s" +
-       "%n%n" +
-       "Elapsed Time: %s" +
-       "%n%n" +
-       "Datasets Harvested: %s" +
-       "%n%n" +
-       "%s" +
-       "%n%n" +
-       "The Europeana API Team" + "\"}";
-
   public StatusReportService(StatusReportConfig config) {
     this.config = config;
   }
@@ -50,7 +29,6 @@ There is no need to indicate the date because slack shows it. I also doubt the n
     LOG.info("Sending Slack Message : " + message);
     try {
        String slackWebhookApiAutomation = config.getSlackWebhook();
-
       if (StringUtils.isBlank(slackWebhookApiAutomation)) {
         LOG.error("Slack webhook not configured, status report will not be published over Slack.");
         return;
@@ -73,9 +51,4 @@ There is no need to indicate the date because slack shows it. I also doubt the n
     }
   }
 
-
-  public void sendSlackMessage(String ...args) {
-    String messageBody = String.format(messageTemplate, args);
-    publishStatusReportToSlack(messageBody);
-  }
 }
