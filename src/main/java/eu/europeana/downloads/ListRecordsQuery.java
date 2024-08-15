@@ -145,7 +145,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 status.getTimeElapsed(),
                 String.valueOf(setsHarvested),
                 SetsUtility.getTabularData(status));
-        statusReportService.publishStatusReportToSlack(SetsUtility.getSetRecordDataJson(status));
+        statusReportService.publishStatusReportToSlack(SetsUtility.getSetRecordDataJson(status,setsHarvested,subject));
 
     }
 

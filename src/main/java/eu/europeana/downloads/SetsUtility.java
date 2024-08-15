@@ -231,11 +231,11 @@ public class SetsUtility {
         return tableData.toString();
     }
 
-    public static String getSetRecordDataJson(DownloadsStatus status){
+    public static String getSetRecordDataJson(DownloadsStatus status,String setsHarvested,String subject){
         StringBuilder jsonOutPut = new StringBuilder();
 
         String begin="{\"blocks\":[";
-        String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: Downloads Status Report\",\"type\":\"plain_text\"},\"type\":\"header\"}";
+        String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: %s\",\"type\":\"plain_text\"},\"type\":\"header\"}";
         String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Number of datasets: %s\"}}";
         String harvestCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Datasets Harvested: %s\"}}";
         String tableHeader = "{\"fields\": [{\"text\": \"*Set Id*\",\"type\": \"mrkdwn\"},{\"text\": \"*No. of Records*\",\"type\": \"mrkdwn\"}],\"type\": \"section\"}";
@@ -249,13 +249,13 @@ public class SetsUtility {
         jsonOutPut.append(rowDivider);
         jsonOutPut.append(comma);
 
-        jsonOutPut.append(reportHeader);
+        jsonOutPut.append(String.format(reportHeader,subject));
         jsonOutPut.append(comma);
 
         jsonOutPut.append(String.format(datasetCount,status.getNoOfSets()));
         jsonOutPut.append(comma);
 
-        jsonOutPut.append(String.format(harvestCount,status.getSetsHarvested()));
+        jsonOutPut.append(String.format(harvestCount,setsHarvested));
         jsonOutPut.append(comma);
 
         jsonOutPut.append(tableHeader);
