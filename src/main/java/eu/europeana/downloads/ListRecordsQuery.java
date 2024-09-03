@@ -54,6 +54,9 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Autowired
     private SimpleMailMessage downloadsReportMail;
 
+    @Autowired
+    private StatusReportService statusReportService;
+
     public ListRecordsQuery() {
     }
 
@@ -84,7 +87,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
      * Example : If there are 5 sets to be harvested and threads are 30.
      * Having 5 threads to harvest each one of them would be faster
      * than one thread, to harvest all 5.
-     * @param noOfSets
+     * @param noOfSets -
      */
     private void initThreadPool(int noOfSets, boolean selectiveUpdate) {
         // init thread pool
@@ -142,6 +145,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 status.getTimeElapsed(),
                 String.valueOf(setsHarvested),
                 SetsUtility.getTabularData(status));
+        statusReportService.publishStatusReportToSlack(SetsUtility.getSetRecordDataJson(status,setsHarvested,subject));
+
     }
 
     private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
@@ -334,7 +339,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                             ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
                     }
                     if (responseObject == null) {
-
                         break;
                     }
                     counter += responseObject.getRecords().size();

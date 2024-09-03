@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.SimpleMailMessage;
 
 @Configuration
-class MailConfig {
+class  MailConfig {
 
     @Value("${europeana-mail-sent-from}")
     private String sentFrom;
@@ -41,4 +41,5 @@ class MailConfig {
                 "The Europeana API Team");
         return message;
     }
+
 }
