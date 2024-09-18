@@ -77,7 +77,8 @@ public class ListIdentifierExecutor implements Callable<ListRecordsResult> {
             }
 
         }
-        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, String.join(", ", sets), errors);
+        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, String.join(", ", sets), errors,
+            null);
     }
 
     /**

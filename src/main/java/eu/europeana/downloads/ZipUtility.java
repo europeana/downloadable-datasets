@@ -1,6 +1,13 @@
 package eu.europeana.downloads;
 
 import eu.europeana.oaipmh.model.Record;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -119,5 +126,59 @@ public class ZipUtility {
             LOG.error("Error reading the zip file {}", zipName, e);
         }
         return 0;
+    }
+
+    public static String generateFileStatus(String fileName, String lastHarvestDate) {
+        String fileStatus = "-";
+        File file = new File(fileName);
+        Path filePath = file.toPath();
+        BasicFileAttributes attributes = getBasicFileAttributes(filePath);
+        long milliseconds = attributes.creationTime().to(TimeUnit.MILLISECONDS);
+        if ((milliseconds > Long.MIN_VALUE) && (milliseconds < Long.MAX_VALUE)) {
+            Date creationDate = new Date(attributes.creationTime().to(TimeUnit.MILLISECONDS));
+            Date modifiedDate = new Date(attributes.lastModifiedTime().to(TimeUnit.MILLISECONDS));
+            fileStatus= getFileStatusValues(creationDate, modifiedDate, getDate(lastHarvestDate));
+        }
+        return  fileStatus;
+    }
+
+    private static Date getDate(String dateString) {
+        Date dateValue = null;
+        if (StringUtils.isNotEmpty(dateString)) {
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+            OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString, formatter);
+            dateValue = Date.from(offsetDateTime.toInstant());
+        }
+        return dateValue;
+    }
+
+    private static BasicFileAttributes getBasicFileAttributes(Path filePath) {
+        BasicFileAttributes attributes = null;
+        try {
+            attributes = Files.readAttributes(filePath, BasicFileAttributes.class);
+        } catch (IOException exception) {
+            LOG.error(exception.getMessage());
+        }
+        return attributes;
+    }
+
+
+    private static String getFileStatusValues(Date creationDate, Date modifiedDate,
+        Date lastHarvestedOn) {
+        String fileStatus = "-";
+        if (creationDate == modifiedDate && lastHarvestedOn == null) {
+            fileStatus = "New";
+        } else if (lastHarvestedOn != null) {
+            if (modifiedDate.before(lastHarvestedOn) || modifiedDate == lastHarvestedOn) {
+                fileStatus = "Unchanged";
+            }
+            if (modifiedDate.after(lastHarvestedOn)) {
+                fileStatus = "Changed";
+            }
+            if (creationDate == modifiedDate) {
+                fileStatus = "Reharvested";
+            }
+        }
+        return fileStatus;
     }
 }

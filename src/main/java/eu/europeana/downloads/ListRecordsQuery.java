@@ -4,6 +4,7 @@ import eu.europeana.oaipmh.model.ListRecords;
 import eu.europeana.oaipmh.model.Record;
 import eu.europeana.oaipmh.model.response.ListRecordsResponse;
 import eu.europeana.oaipmh.service.exception.OaiPmhException;
+import java.util.Map.Entry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,6 +57,10 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
 
     @Autowired
     private StatusReportService statusReportService;
+
+    public String recordsTobeDownloaded ="0";
+
+    public Integer recordsDownloaded =0;
 
     public ListRecordsQuery() {
     }
@@ -145,7 +150,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 status.getTimeElapsed(),
                 String.valueOf(setsHarvested),
                 SetsUtility.getTabularData(status));
-        statusReportService.publishStatusReportToSlack(SetsUtility.getSetRecordDataJson(status,setsHarvested,subject));
+         statusReportService.publishStatusReportToSlack(SetsUtility.getReportInJsonFormat(status,setsHarvested,subject));
 
     }
 
@@ -162,19 +167,20 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
         // if setsFromListSets is still empty get the sets from ListSet
         // ie; either set is set to ALL or empty
+        List<String> setsToBeDeleted= Collections.EMPTY_LIST;
         if (setsFromListSets.isEmpty()) {
-            setsFromListSets = getSetsFromListSet(oaipmhServer, lastHarvestDate);
+            setsToBeDeleted = getSetsToBeDeleted(oaipmhServer);
+            setsFromListSets = getSetsFromListSet(oaipmhServer, lastHarvestDate,setsToBeDeleted);
             selectiveUpdate = true;
         }
         LOG.info("{} Sets to be harvested : {} ", setsFromListSets.size(), setsFromListSets);
         initThreadPool(setsFromListSets.size(), selectiveUpdate);
-        DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new java.util.Date(start));
+        DownloadsStatus status = new DownloadsStatus(setsFromListSets.size(), 0, new Date(start));
 
         if (! setsFromListSets.isEmpty()) {
             logger.setTotalItems(setsFromListSets.size());
             List<Future<ListRecordsResult>> results = null;
             List<Callable<ListRecordsResult>> tasks = new ArrayList<>();
-
             int perThread = setsFromListSets.size() / threads;
 
         // create task for each resource provider
@@ -191,6 +197,8 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             results = threadPool.invokeAll(tasks);
             List<String> setsDownloaded = new ArrayList<>();
             ListRecordsResult listRecordsResult;
+            Map<String,String>  failedrecordPerSet = new HashMap<>();
+
             for (Future<ListRecordsResult> result : results) {
                 listRecordsResult = result.get();
                 LOG.info("Executor finished with {} errors in {} sec.",
@@ -200,16 +208,21 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 if(StringUtils.isNotEmpty(listRecordsResult.getSetsDownloaded())) {
                     setsDownloaded.addAll(Arrays.asList(listRecordsResult.getSetsDownloaded().split("\\s*,\\s*")));
                 }
+                failedrecordPerSet.putAll(listRecordsResult.getFailedRecordCountPerSet());
+
                 logger.logProgress(counter);
             }
             // setsDownloaded only contains successfully downloaded sets
             status.setSetsRecordCountMap(getRecordsCount(setsDownloaded));
+
             status.setSetsHarvested(setsDownloaded.size());
             getFailedSets(setsFromListSets, setsDownloaded, directoryLocation);
             // After getFailedSets(), setsFromListSets contains failed sets now
             // fail safe check
             // if successful sets + failed sets is not equal to total list sets size, log an error
             failSafeCheck(status.getNoOfSets(), status.getSetsHarvested(), setsFromListSets.size());
+            status.setsFileStatusMap(getFileStatusMap(setsDownloaded,setsToBeDeleted,lastHarvestDate,failedrecordPerSet));
+            status.setFailedRecordsCountMap(failedrecordPerSet);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.error("Interrupted.", e);
@@ -269,7 +282,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
      *
      * @return list of  datasets
      */
-    private List<String> getSetsFromListSet (OAIPMHServiceClient oaipmhServer, String lastHarvestDate) {
+    private List<String> getSetsFromListSet (OAIPMHServiceClient oaipmhServer, String lastHarvestDate, List<String> setsToBeDeleted ) {
         ListSetsQuery setsQuery = new ListSetsQuery(logProgressInterval);
         List<String> setsFromListSets;
         // if lastHarvestDate is empty, this is the first time we're running the downloads, so get everything
@@ -280,13 +293,13 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         // Check for Updated, newly created and de-published datasets.
         // For de-published dataset XML folder is read
        else {
-            List<String> setsToBeDeleted = SetsUtility.getSetsToBeDeleted(oaipmhServer,
-                    SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE), logProgressInterval);
+
             // delete the de-published datasets from XML and TTL folders
             if (! setsToBeDeleted.isEmpty()) {
                 LOG.info("{} De-published datasets : {} ", setsToBeDeleted.size(), setsToBeDeleted);
                 SetsUtility.deleteDataset(setsToBeDeleted, directoryLocation, Constants.XML_FILE);
                 SetsUtility.deleteDataset(setsToBeDeleted, directoryLocation, Constants.TTL_FILE);
+
             } else {
                 LOG.info("There are no De-published datasets");
             }
@@ -298,8 +311,14 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         return setsFromListSets;
     }
 
+    private List<String> getSetsToBeDeleted(OAIPMHServiceClient oaipmhServer) {
+      return SetsUtility.getSetsToBeDeleted(oaipmhServer,
+                SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE), logProgressInterval);
+    }
+
     private void executeListRecords(OAIPMHServiceClient oaipmhServer, String setIdentifier) {
         long counter = 0;
+        recordsDownloaded =0;
         long start = System.currentTimeMillis();
         ProgressLogger logger = new ProgressLogger( setIdentifier, -1, logProgressInterval);
 
@@ -310,51 +329,72 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         String xmlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.XML_FILE, setIdentifier);
         String ttlZipName = SetsUtility.getZipsFolder(directoryLocation, Constants.TTL_FILE, setIdentifier);
 
-        try (final ZipOutputStream xmlZout = new ZipOutputStream(new FileOutputStream(new File(xmlZipName)));
-             final ZipOutputStream ttlZout = new ZipOutputStream(new FileOutputStream(new File(ttlZipName)));
-             OutputStreamWriter writer = new OutputStreamWriter(xmlZout);
-             OutputStreamWriter writer1 = new OutputStreamWriter(ttlZout)) {
 
-              //writing in ZIP
-              for(Record record : responseObject.getRecords()) {
-                    ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
-                    ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
-              }
-             if (responseObject != null) {
-                counter += responseObject.getRecords().size();
 
-                if (responseObject.getResumptionToken() != null) {
-                    logger.setTotalItems(responseObject.getResumptionToken().getCompleteListSize());
-                } else {
-                    logger.setTotalItems(responseObject.getRecords().size());
-                }
-                while (responseObject.getResumptionToken() != null) {
 
-                    request = getResumptionRequest(oaipmhServer.getOaipmhServer(), responseObject.getResumptionToken().getValue());
-                    response = oaipmhServer.getListRecordRequest(request);
-                    responseObject = response.getListRecords();
+            try (final ZipOutputStream xmlZout = new ZipOutputStream(
+                new FileOutputStream(new File(xmlZipName)));
+                final ZipOutputStream ttlZout = new ZipOutputStream(
+                    new FileOutputStream(new File(ttlZipName)));
+                OutputStreamWriter writer = new OutputStreamWriter(xmlZout);
+                OutputStreamWriter writer1 = new OutputStreamWriter(ttlZout)) {
+
+                //writing in ZIP
+
+                if (responseObject != null) {
+                    counter += responseObject.getRecords().size();
+
+                    if (responseObject.getResumptionToken() != null) {
+                        logger.setTotalItems(
+                            responseObject.getResumptionToken().getCompleteListSize());
+
+                        recordsTobeDownloaded = String.valueOf(responseObject.getResumptionToken().getCompleteListSize());
+                    } else {
+                        logger.setTotalItems(responseObject.getRecords().size());
+                        recordsTobeDownloaded = String.valueOf(responseObject.getRecords().size());
+
+                    }
+
+                    for (Record record : responseObject.getRecords()) {
+                        ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
+                        ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
+                        recordsDownloaded++;
+                    }
+
+                    while (responseObject.getResumptionToken() != null) {
+
+                        request = getResumptionRequest(oaipmhServer.getOaipmhServer(),
+                            responseObject.getResumptionToken().getValue());
+                        response = oaipmhServer.getListRecordRequest(request);
+                        responseObject = response.getListRecords();
                         //writing in ZIP
                         for (Record record : responseObject.getRecords()) {
                             ZipUtility.writeInZip(xmlZout, writer, record, Constants.XML_FILE);
                             ZipUtility.writeInZip(ttlZout, writer1, record, Constants.TTL_FILE);
+                            recordsDownloaded++;
+                        }
+                        if (responseObject == null) {
+                            break;
+                        }
+                        counter += responseObject.getRecords().size();
+                        logger.logProgress(counter);
                     }
-                    if (responseObject == null) {
-                        break;
-                    }
-                    counter += responseObject.getRecords().size();
-                    logger.logProgress(counter);
+
                 }
+
+            } catch (IOException e) {
+                LOG.error("Error creating outputStreams ", e);
             }
+            finally {
+                LOG.info("Dataset:"+set+ " Total records: "+recordsTobeDownloaded + " Downloaded:" + recordsDownloaded + " Failed records:" +(Long.valueOf(recordsTobeDownloaded)-recordsDownloaded));
+            }
+            //create MD5Sum file for the XML and TTL zip
+            ZipUtility.createMD5SumFile(xmlZipName);
+            ZipUtility.createMD5SumFile(ttlZipName);
 
-        } catch (IOException e) {
-            LOG.error("Error creating outputStreams ", e);
-        }
-        //create MD5Sum file for the XML and TTL zip
-        ZipUtility.createMD5SumFile(xmlZipName);
-        ZipUtility.createMD5SumFile(ttlZipName);
-
-        LOG.info("ListRecords for set {} executed in {}. Harvested {} records.", setIdentifier,
+            LOG.info("ListRecords for set {} executed in {}. Harvested {} records.", setIdentifier,
                 ProgressLogger.getDurationText(System.currentTimeMillis() - start), counter);
+
     }
 
     private String getResumptionRequest(String oaipmhServer, String resumptionToken) {
@@ -382,6 +422,27 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         CSVFile.writeInCsv(sets,directoryLocation);
         // log the new failed set file values
         LOG.info("Failed sets file values : " + CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation)));
+    }
+
+    private Map<String,String> getFileStatusMap(List<String> setsDownloaded,List<String> setsDeleted, String lastHarvestDate,
+        Map<String, String> failedrecordPerSet) {
+        Map<String,String> statusMap = new HashMap<>();
+        //Put status for New or Unchange or Changed or Reharvested sets
+        for(String setId : setsDownloaded){
+            String fileName = SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)+Constants.PATH_SEPERATOR+setId + Constants.ZIP_EXTENSION;
+            statusMap.put(setId,ZipUtility.generateFileStatus(fileName,lastHarvestDate));
+        }
+        //Put status for deleted sets
+        for (String deletedSetId: setsDeleted){
+            statusMap.put(deletedSetId,"Deleted");
+        }
+
+        //Put status for failed sets , this are not considered as the successfully downloaded sets
+        for(Entry<String,String> kv : failedrecordPerSet.entrySet()){
+            String fileName = SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)+Constants.PATH_SEPERATOR+kv.getKey() + Constants.ZIP_EXTENSION;
+            statusMap.put(kv.getKey(),ZipUtility.generateFileStatus(fileName,lastHarvestDate));
+        }
+        return statusMap;
     }
 
     @PreDestroy

@@ -96,7 +96,7 @@ public class OAIPMHServiceClient {
 
         // failed sets will not be retied in verb is Checksum and if executeFailedSets is set to false
         if (!StringUtils.equals(Constants.CHECKSUM_VERB, verbToExecute.getVerbName()) && executeFailedSets) {
-            LOG.info("Failed sets flow will be executed : verb {}, executeFailedSets {}", oaipmhServer);
+            LOG.info("Failed sets flow will be executed : verb {}, executeFailedSets {}", verbToExecute.getVerbName(),executeFailedSets);
             // First check for failed sets from previous run
             List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
             if (!failedSets.isEmpty()) {

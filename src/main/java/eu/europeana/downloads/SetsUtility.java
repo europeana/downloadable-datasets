@@ -37,7 +37,7 @@ public class SetsUtility {
             return Files.readString(Paths.get(path));
         } catch (NoSuchFileException e) {
             String msg = (set.isEmpty() || set.equals("ALL")) ? "ALL" : set;
-            LOG.error("{} file doesn't exist. Harvesting sets : {} " , Constants.HARVEST_DATE_FILENAME, msg);
+            LOG.error("{} file doesn't exist at {}. Harvesting sets : {} " , Constants.HARVEST_DATE_FILENAME,path, msg);
         } catch (IOException e) {
                 LOG.error("Error reading the lastHarvestDate file", e);
         }
@@ -208,8 +208,8 @@ public class SetsUtility {
      * Returns the string in the format of table including sets
      * and the record count of the successfully harvested datasets
      *
-     * @param status
-     * @return
+     * @param status -
+     * @return string -
      */
     public static String getTabularData(DownloadsStatus status) {
         StringBuilder tableData = new StringBuilder();
@@ -231,56 +231,46 @@ public class SetsUtility {
         return tableData.toString();
     }
 
-    public static String getSetRecordDataJson(DownloadsStatus status,String setsHarvested,String subject){
-        StringBuilder jsonOutPut = new StringBuilder();
+   public static String getReportInJsonFormat(DownloadsStatus status,String setsHarvested,String subject){
+       StringBuilder result = new StringBuilder();
 
-        String begin="{\"blocks\":[";
-        String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: %s\",\"type\":\"plain_text\"},\"type\":\"header\"}";
-        String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Number of datasets: %s\"}}";
-        String harvestCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Datasets Harvested: %s\"}}";
-        String tableHeader = "{\"fields\": [{\"text\": \"*Set Id*\",\"type\": \"mrkdwn\"},{\"text\": \"*No. of Records*\",\"type\": \"mrkdwn\"}],\"type\": \"section\"}";
-        String tableRow = "{\"fields\":[{\"text\":\"%s\",\"type\":\"mrkdwn\"},{\"text\":\"%s\",\"type\":\"mrkdwn\"}],\"type\":\"section\"}";
-        String tableFooter = "{\"fields\": [{\"text\": \"*Total*\",\"type\": \"mrkdwn\"},{\"text\": \"%s\",\"type\": \"mrkdwn\"}],\"type\": \"section\"}";
-        String rowDivider = "{\"type\": \"divider\"}";
-        String end="]}";
-        String comma = ",";
+       String begin="{\"blocks\":[";
+       String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: %s\",\"type\":\"plain_text\"},\"type\":\"header\"}";
+       String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Number of datasets: %s\"}}";
+       String harvestCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Datasets Harvested: %s\"}}";
+       String tableHeader = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*Dataset                  Status           Total Records    Failed Records*\"}}";
+       String tableRow = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"``` %s %s  %s %s ```\"}}";
+       String rowDivider = "{\"type\": \"divider\"}";
+       String end="]}";
+       String comma = ",";
 
-        jsonOutPut.append(begin);
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(comma);
+       result.append(begin).append(String.format(reportHeader,subject)).append(comma)
+           .append(String.format(datasetCount,status.getNoOfSets())).append(comma)
+           .append(String.format(harvestCount,setsHarvested)).append(comma);
 
-        jsonOutPut.append(String.format(reportHeader,subject));
-        jsonOutPut.append(comma);
 
-        jsonOutPut.append(String.format(datasetCount,status.getNoOfSets()));
-        jsonOutPut.append(comma);
+       if (!status.getSetsFileStatusMap().isEmpty() &&( !status.getSetsRecordCountMap().isEmpty() || !status.getFailedRecordsCountMap().isEmpty()) ){
+           result.append(tableHeader).append(comma);
+           for (Map.Entry<String, String> entry : status.getSetsFileStatusMap().entrySet()) {
 
-        jsonOutPut.append(String.format(harvestCount,setsHarvested));
-        jsonOutPut.append(comma);
+                   Long totalRecordsForSet = status.getSetsRecordCountMap().get(entry.getKey()) ;
+                   String failedRecords = status.getFailedRecordsCountMap().get(entry.getKey());
+                   String totalRecordsForSetVal= totalRecordsForSet!=null? totalRecordsForSet.toString():"-";
+                   result.append(String.format(tableRow,
+                                getPaddedString(entry.getKey(),15) ,
+                                getPaddedString(entry.getValue(),15),
+                                getPaddedString(totalRecordsForSetVal,15) ,
+                                getPaddedString( failedRecords,15)
+                      ));
 
-        jsonOutPut.append(tableHeader);
-        jsonOutPut.append(comma);
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(comma);
-
-        long totalRecords = 0;
-        if (!status.getSetsRecordCountMap().isEmpty()) {
-            for (Map.Entry<String, Long> entry : status.getSetsRecordCountMap().entrySet()) {
-                jsonOutPut.append(String.format(tableRow,entry.getKey(),entry.getValue()));
-                jsonOutPut.append(comma);
-                totalRecords += entry.getValue();
-            }
-        }
-
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(comma);
-        jsonOutPut.append(String.format(tableFooter,totalRecords));
-        jsonOutPut.append(comma);
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(end);
-
-        return jsonOutPut.toString();
+                   result.append(comma);
+           }
+       }
+       result.append(rowDivider).append(end);
+       return result.toString();
+   }
+    private static Object getPaddedString(String str, int expectedLength) {
+        String input = (str != null) ? str : "";
+        return StringUtils.rightPad(input, expectedLength);
     }
-
-
 }
