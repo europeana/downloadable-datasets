@@ -231,13 +231,13 @@ public class SetsUtility {
         return tableData.toString();
     }
 
-   public static String getReportInJsonFormat(DownloadsStatus status,String setsHarvested,String subject){
-       StringBuilder result = new StringBuilder();
+   public static void generateReportsInput(DownloadsStatus status,String subject,StringBuilder fileInput,StringBuilder result,String reportFile){
 
        String begin="{\"blocks\":[";
        String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: %s\",\"type\":\"plain_text\"},\"type\":\"header\"}";
-       String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Number of datasets: %s\"}}";
-       String harvestCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Datasets Harvested: %s\"}}";
+       String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"%s datasets were processed\"}}";
+       String overViewDetails ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Status Overview \\n new: %s, changed: %s, unchanged: %s, reharvested: %s, deleted: %s\"}}";
+       String reportLocation ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Full report : <%s>\"}}";
        String tableHeader = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*Dataset                  Status           Total Records    Failed Records*\"}}";
        String tableRow = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"``` %s %s  %s %s ```\"}}";
        String rowDivider = "{\"type\": \"divider\"}";
@@ -245,16 +245,23 @@ public class SetsUtility {
        String comma = ",";
 
        result.append(begin).append(String.format(reportHeader,subject)).append(comma)
-           .append(String.format(datasetCount,status.getNoOfSets())).append(comma)
-           .append(String.format(harvestCount,setsHarvested)).append(comma);
+           .append(String.format(datasetCount,status.getNoOfSets())).append(comma);
 
+       Map<String, Integer> valueCountMap = getValueCountMap(status.getSetsFileStatusMap());
+       result.append(String.format(overViewDetails,
+           valueCountMap.get("New"),valueCountMap.get("Changed"),
+           valueCountMap.get("Unchanged"),valueCountMap.get("Reharvested"),valueCountMap.get("Deleted")
+           )).append(comma);
 
-       if (!status.getSetsFileStatusMap().isEmpty() &&( !status.getSetsRecordCountMap().isEmpty() || !status.getFailedRecordsCountMap().isEmpty()) ){
+       result.append(String.format(reportLocation,reportFile)).append(comma);
+
+       if (!status.getSetsFileStatusMap().isEmpty()){
            result.append(tableHeader).append(comma);
-           for (Map.Entry<String, String> entry : status.getSetsFileStatusMap().entrySet()) {
 
-                   Long totalRecordsForSet = status.getSetsRecordCountMap().get(entry.getKey()) ;
-                   String failedRecords = status.getFailedRecordsCountMap().get(entry.getKey());
+           fileInput.append("DatasetId,FileStatus,TotalRecords,FailedRecords").append("\n");
+           for (Map.Entry<String, String> entry : status.getSetsFileStatusMap().entrySet()) {
+                   Long totalRecordsForSet =status.getSetsRecordCountMap()!=null? status.getSetsRecordCountMap().get(entry.getKey()) :null;
+                   String failedRecords =status.getFailedRecordsCountMap()!= null? status.getFailedRecordsCountMap().get(entry.getKey()): "0";
                    String totalRecordsForSetVal= totalRecordsForSet!=null? totalRecordsForSet.toString():"-";
                    result.append(String.format(tableRow,
                                 getPaddedString(entry.getKey(),15) ,
@@ -262,15 +269,30 @@ public class SetsUtility {
                                 getPaddedString(totalRecordsForSetVal,15) ,
                                 getPaddedString( failedRecords,15)
                       ));
-
                    result.append(comma);
+               fileInput.append(entry.getKey()).append(comma);fileInput.append(entry.getValue()).append(comma);
+               fileInput.append(totalRecordsForSetVal).append(comma);fileInput.append(failedRecords).append(comma);
            }
        }
        result.append(rowDivider).append(end);
-       return result.toString();
+
    }
     private static Object getPaddedString(String str, int expectedLength) {
         String input = (str != null) ? str : "";
         return StringUtils.rightPad(input, expectedLength);
+    }
+
+    private static Map<String,Integer> getValueCountMap(Map<String,String> inputMap){
+        Map<String,Integer> resultMap = new HashMap<>();
+        for(String val :inputMap.values()){
+            if(resultMap.get(val) == null){
+                resultMap.put(val,1);
+            }
+            else {
+                int count = resultMap.get(val);
+                resultMap.put(val,count+1);
+            }
+        }
+        return resultMap;
     }
 }

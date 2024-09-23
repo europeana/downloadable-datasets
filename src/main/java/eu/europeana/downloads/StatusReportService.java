@@ -1,6 +1,9 @@
 package eu.europeana.downloads;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -51,4 +54,32 @@ public class StatusReportService {
     }
   }
 
+  public String uploadReportInCsv(String fileInput,String fileName) {
+    try (FileWriter csvWriter = new FileWriter(fileName)) {
+        csvWriter.append(fileInput);
+      } catch (IOException e) {
+        LOG.error("Exception occured during report file Creation. ",e.getMessage());
+      }
+      LOG.info("Report created in file : "+fileName);
+      return fileName;
+    }
+
+  private static String getReportPath(String directoryLocation,String fileName) {
+     return directoryLocation + Constants.PATH_SEPERATOR +fileName;
+  }
+
+  private static String getReportFileName() {
+    String fileNameSuffix = new SimpleDateFormat("yyyyMMMdd_HHmm").format(new Date());
+    return Constants.DOWNLOAD_STATUS_FILENAME_PREFIX + fileNameSuffix+Constants.CSV_EXTENSION;
+  }
+
+  public void publishStatusReport(DownloadsStatus status, String subject, String directoryLocation,String downloadServerURL) {
+    StringBuilder fileInput=new StringBuilder();
+    StringBuilder jsonInput=new StringBuilder();
+    String reportFileName = getReportFileName();//generate It ones as it contains timestamp
+    String reportFileUrl = downloadServerURL + Constants.PATH_SEPERATOR + reportFileName;
+    SetsUtility.generateReportsInput(status,subject,fileInput,jsonInput, reportFileUrl);
+    uploadReportInCsv(fileInput.toString(),getReportPath(directoryLocation,reportFileName));
+    publishStatusReportToSlack(jsonInput.toString());
+  }
 }

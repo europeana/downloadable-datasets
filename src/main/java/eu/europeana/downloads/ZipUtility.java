@@ -163,8 +163,7 @@ public class ZipUtility {
     }
 
 
-    private static String getFileStatusValues(Date creationDate, Date modifiedDate,
-        Date lastHarvestedOn) {
+    private static String getFileStatusValues(Date creationDate, Date modifiedDate, Date lastHarvestedOn) {
         String fileStatus = "-";
         if (creationDate == modifiedDate && lastHarvestedOn == null) {
             fileStatus = "New";

@@ -67,4 +67,6 @@ public class Constants {
     public static final String TABLE_LINE                = "--------------------------------------------\n";
     public static final String TABLE_SEPERATOR           = "  |";
 
+    public static final String DOWNLOAD_STATUS_FILENAME_PREFIX ="DownloadStatus";
+
 }
