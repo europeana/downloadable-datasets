@@ -244,8 +244,8 @@ public class SetsUtility {
        String end="]}";
        String comma = ",";
 
-       result.append(begin).append(String.format(reportHeader,subject)).append(comma)
-           .append(String.format(datasetCount,status.getNoOfSets())).append(comma);
+      // result.append(begin).append(String.format(reportHeader,subject)).append(comma);
+       result .append(String.format(datasetCount,status.getNoOfSets())).append(comma);
 
        Map<String, Integer> valueCountMap = getValueCountMap(status.getSetsFileStatusMap());
        result.append(String.format(overViewDetails,
