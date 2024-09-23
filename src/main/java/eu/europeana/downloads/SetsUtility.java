@@ -236,16 +236,15 @@ public class SetsUtility {
        String begin="{\"blocks\":[";
        String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: %s\",\"type\":\"plain_text\"},\"type\":\"header\"}";
        String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"%s datasets were processed\"}}";
-       String overViewDetails ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Status Overview \\n new: %s, changed: %s, unchanged: %s, reharvested: %s, deleted: %s\"}}";
-       String reportLocation ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Full report : <%s>\"}}";
+       String overViewDetails ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Status Overview: \\n new: %s, changed: %s, unchanged: %s, reharvested: %s, deleted: %s\"}}";
+       String reportLocation ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Full report <%s|here>\"}}";
        String tableHeader = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*Dataset                  Status           Total Records    Failed Records*\"}}";
        String tableRow = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"``` %s %s  %s %s ```\"}}";
        String rowDivider = "{\"type\": \"divider\"}";
        String end="]}";
        String comma = ",";
 
-      // result.append(begin).append(String.format(reportHeader,subject)).append(comma);
-       result .append(String.format(datasetCount,status.getNoOfSets())).append(comma);
+       result.append(begin).append(String.format(datasetCount,status.getNoOfSets())).append(comma);
 
        Map<String, Integer> valueCountMap = getValueCountMap(status.getSetsFileStatusMap());
        result.append(String.format(overViewDetails,
