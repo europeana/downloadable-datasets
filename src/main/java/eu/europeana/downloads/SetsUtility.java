@@ -246,44 +246,41 @@ public class SetsUtility {
 
        result.append(begin).append(String.format(datasetCount,status.getNoOfSets())).append(comma);
 
-       Map<String, Integer> valueCountMap = getValueCountMap(status.getSetsFileStatusMap());
+       Map<ZipFileStatus, Integer> valueCountMap = getValueCountMap(status.getSetsFileStatusMap());
        result.append(String.format(overViewDetails,
-           valueCountMap.get("New"),valueCountMap.get("Changed"),
-           valueCountMap.get("Unchanged"),valueCountMap.get("Reharvested"),valueCountMap.get("Deleted")
+           valueCountMap.getOrDefault(ZipFileStatus.NEW,0),valueCountMap.getOrDefault(ZipFileStatus.CHANGED,0),
+           valueCountMap.getOrDefault(ZipFileStatus.UNCHANGED,0),valueCountMap.getOrDefault(ZipFileStatus.REHARVESTED,0),
+           valueCountMap.getOrDefault(ZipFileStatus.DELETED,0)
            )).append(comma);
 
        result.append(String.format(reportLocation,reportFile)).append(comma);
 
        if (!status.getSetsFileStatusMap().isEmpty()){
            result.append(tableHeader).append(comma);
-
+           int counter =0;
            fileInput.append("DatasetId,FileStatus,TotalRecords,FailedRecords").append("\n");
-           for (Map.Entry<String, String> entry : status.getSetsFileStatusMap().entrySet()) {
-                   Long totalRecordsForSet =status.getSetsRecordCountMap()!=null? status.getSetsRecordCountMap().get(entry.getKey()) :null;
-                   String failedRecords =status.getFailedRecordsCountMap()!= null? status.getFailedRecordsCountMap().get(entry.getKey()): "0";
-                   String totalRecordsForSetVal= totalRecordsForSet!=null? totalRecordsForSet.toString():"-";
-                   result.append(String.format(tableRow,
-                                getPaddedString(entry.getKey(),15) ,
-                                getPaddedString(entry.getValue(),15),
-                                getPaddedString(totalRecordsForSetVal,15) ,
-                                getPaddedString( failedRecords,15)
-                      ));
-                   result.append(comma);
+           for (Map.Entry<String, ZipFileStatus> entry : status.getSetsFileStatusMap().entrySet()) {
+                   String failedRecords = status.getFailedRecordsCountMap().getOrDefault(entry.getKey(),"0");
+                   String totalRecordsForSet = String.valueOf(status.getSetsRecordCountMap().getOrDefault(entry.getKey(),0L));
+                   if(counter++ <=Constants.MAX_RESULT_ROWS_FOR_SLACK_MESSAGE) {
+                       result.append(String.format(tableRow,
+                           StringUtils.rightPad(entry.getKey(), Constants.TABLE_CELL_SIZE),
+                           StringUtils.rightPad(entry.getValue().toString(),
+                               Constants.TABLE_CELL_SIZE),
+                           StringUtils.rightPad(totalRecordsForSet, Constants.TABLE_CELL_SIZE),
+                           StringUtils.rightPad(failedRecords, Constants.TABLE_CELL_SIZE)
+                       ));
+                       result.append(comma);
+                   }
                fileInput.append(entry.getKey()).append(comma);fileInput.append(entry.getValue()).append(comma);
-               fileInput.append(totalRecordsForSetVal).append(comma);fileInput.append(failedRecords).append(comma);
+               fileInput.append(totalRecordsForSet).append(comma);fileInput.append(failedRecords).append("\n");
            }
        }
        result.append(rowDivider).append(end);
-
    }
-    private static Object getPaddedString(String str, int expectedLength) {
-        String input = (str != null) ? str : "";
-        return StringUtils.rightPad(input, expectedLength);
-    }
-
-    private static Map<String,Integer> getValueCountMap(Map<String,String> inputMap){
-        Map<String,Integer> resultMap = new HashMap<>();
-        for(String val :inputMap.values()){
+    private static Map<ZipFileStatus,Integer> getValueCountMap(Map<String,ZipFileStatus> inputMap){
+        Map<ZipFileStatus,Integer> resultMap = new HashMap<>();
+        for(ZipFileStatus val :inputMap.values()){
             if(resultMap.get(val) == null){
                 resultMap.put(val,1);
             }

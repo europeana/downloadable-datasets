@@ -32,7 +32,7 @@ public class CheckSumGenerator extends BaseQuery implements OAIPMHQuery {
     }
 
     @Override
-    public void execute(OAIPMHServiceClient oaipmhServer, List<String> failedSets) {
+    public void execute(OAIPMHServiceClient oaipmhServer) {
         zipsLocation = zipsLocation.isEmpty() ? directoryLocation : zipsLocation;
         LOG.info("Generating CheckSum for the XML files ");
         generateCheckSum(SetsUtility.getFolderName(zipsLocation, Constants.XML_FILE), SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE));

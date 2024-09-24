@@ -46,7 +46,12 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Value("${server-url}")
     private String downloadServerURL;
 
+    @Value("${zips-folder}")
+    private String directoryLocationForReportFile;
+
     private String lastHarvestDate;
+
+    private Date currentHarvestStartTime;
 
     private List<String> sets = new ArrayList<>();
 
@@ -82,6 +87,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         if (! set.isEmpty() && !StringUtils.equals(set, "ALL")) {
             sets.addAll(Arrays.asList(set.split(",")));
         }
+        currentHarvestStartTime = new Date();
     }
 
     /**
@@ -122,15 +128,9 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     @Override
-    public void execute(OAIPMHServiceClient oaipmhServer, List<String> failedSets) throws OaiPmhException {
-        // if failedSets are present, download them
-        if (failedSets != null && !failedSets.isEmpty()) {
-//            DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, failedSets, "");
-//            status.setRetriedSetsStatus(SetsUtility.getRetriedSetsStatus(failedSets,directoryLocation));
-//            sendEmail(status, true);
-        }
-        else if (sets.size() != 1 && threads > 1) {
-            DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets, lastHarvestDate);
+    public void execute(OAIPMHServiceClient oaipmhServer) throws OaiPmhException {
+         if (sets.size() != 1 && threads > 1) {
+            DownloadsStatus status = executeMultithreadListRecords(oaipmhServer, sets, lastHarvestDate,currentHarvestStartTime);
             sendEmail(status, false);
         } else {
             executeListRecords(oaipmhServer, set);
@@ -153,10 +153,10 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 status.getTimeElapsed(),
                 String.valueOf(setsHarvested),
                 SetsUtility.getTabularData(status));
-        statusReportService.publishStatusReport(status,subject,directoryLocation,downloadServerURL);
+        statusReportService.publishStatusReport(status,subject,directoryLocationForReportFile,downloadServerURL);
     }
 
-    private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate) {
+    private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate,Date currentHarvestStartTime) {
         long counter = 0;
         long start = System.currentTimeMillis();
         boolean selectiveUpdate = false;
@@ -222,7 +222,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
             // if successful sets + failed sets is not equal to total list sets size, log an error
             failSafeCheck(status.getNoOfSets(), status.getSetsHarvested(), setsFromListSets.size());
 
-            Map<String, String> fileStatusMap = getFileStatusMap(setsDownloaded, lastHarvestDate,
+            Map<String, ZipFileStatus> fileStatusMap = getFileStatusMap(setsDownloaded, lastHarvestDate,currentHarvestStartTime,
                 failedrecordPerDownloadedSet);
             updateFileStatusMapForDeletedSets(fileStatusMap,setsToBeDeleted);
             updateFileStatusMapForTheFailedSets(fileStatusMap,setsFromListSets); // at this point setsFromListSets contains sets which are not downloaded
@@ -252,16 +252,16 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         return status;
     }
 
-    private void updateFileStatusMapForTheFailedSets(Map<String, String> fileStatusMap, List<String> setsFromListSets) {
+    private void updateFileStatusMapForTheFailedSets(Map<String, ZipFileStatus> fileStatusMap, List<String> setsFromListSets) {
         for (String failedSetId:setsFromListSets){
-            fileStatusMap.put(failedSetId,"NA");
+            fileStatusMap.put(failedSetId,ZipFileStatus.NA);
         }
     }
 
-    private void updateFileStatusMapForDeletedSets(Map<String, String> fileStatusMap, List<String> setsDeleted) {
+    private void updateFileStatusMapForDeletedSets(Map<String, ZipFileStatus> fileStatusMap, List<String> setsDeleted) {
         //Put status for deleted sets
         for (String deletedSetId: setsDeleted){
-            fileStatusMap.put(deletedSetId,"Deleted");
+            fileStatusMap.put(deletedSetId,ZipFileStatus.DELETED);
         }
     }
 
@@ -440,18 +440,18 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         LOG.info("Failed sets file values : " + CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation)));
     }
 
-    private Map<String,String> getFileStatusMap(List<String> setsDownloaded,String lastHarvestDate,
-        Map<String, String> failedrecordPerSet) {
-        Map<String,String> statusMap = new HashMap<>();
+    private Map<String,ZipFileStatus> getFileStatusMap(List<String> setsDownloaded,String lastHarvestDate,
+        Date currentHarvestStartTime, Map<String, String> failedrecordPerSet) {
+        Map<String,ZipFileStatus> statusMap = new HashMap<>();
         //Put status for New or Unchange or Changed or Reharvested sets
         for(String setId : setsDownloaded){
             String fileName = SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)+Constants.PATH_SEPERATOR+setId + Constants.ZIP_EXTENSION;
-            statusMap.put(setId,ZipUtility.generateFileStatus(fileName,lastHarvestDate));
+            statusMap.put(setId,ZipUtility.generateFileStatus(fileName,lastHarvestDate,currentHarvestStartTime));
         }
         //Put status for failed sets , these are considered as the partially downloaded sets as we do not have all records properly downloaded
         for(Entry<String,String> kv : failedrecordPerSet.entrySet()){
             String fileName = SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)+Constants.PATH_SEPERATOR+kv.getKey() + Constants.ZIP_EXTENSION;
-            statusMap.put(kv.getKey(),ZipUtility.generateFileStatus(fileName,lastHarvestDate));
+            statusMap.put(kv.getKey(),ZipUtility.generateFileStatus(fileName,lastHarvestDate,currentHarvestStartTime));
         }
         return statusMap;
     }

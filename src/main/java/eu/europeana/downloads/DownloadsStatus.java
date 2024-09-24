@@ -13,7 +13,7 @@ public class DownloadsStatus {
     private String retriedSetsStatus;
     Map<String, Long> setsRecordCountMap = new HashMap<>();
 
-    Map<String,String> setsFileStatusMap = new HashMap<>();
+    Map<String,ZipFileStatus> setsFileStatusMap = new HashMap<>();
 
     Map<String,String> failedRecordsCountMap = new HashMap<>();
 
@@ -75,11 +75,11 @@ public class DownloadsStatus {
         this.setsRecordCountMap = setsRecordCountMap;
     }
 
-    public void setsFileStatusMap(Map<String, String> fileStatusMap) {
+    public void setsFileStatusMap(Map<String, ZipFileStatus> fileStatusMap) {
         this.setsFileStatusMap=fileStatusMap;
     }
 
-    public Map<String, String> getSetsFileStatusMap() {
+    public Map<String, ZipFileStatus> getSetsFileStatusMap() {
         return setsFileStatusMap;
     }
     public void setFailedRecordsCountMap(Map<String, String> failedRecordsCountMap) {

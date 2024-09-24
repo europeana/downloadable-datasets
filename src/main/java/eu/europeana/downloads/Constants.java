@@ -68,5 +68,6 @@ public class Constants {
     public static final String TABLE_SEPERATOR           = "  |";
 
     public static final String DOWNLOAD_STATUS_FILENAME_PREFIX ="DownloadStatus";
-
+    public static final Integer TABLE_CELL_SIZE = 15;
+    public static final Integer MAX_RESULT_ROWS_FOR_SLACK_MESSAGE = 5;
 }

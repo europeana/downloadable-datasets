@@ -61,7 +61,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
             ListRecordsQuery listRecordsQuery = new ListRecordsQuery(metadataPrefix, set,
                 directoryLocation, logProgressInterval);
             try {
-                listRecordsQuery.execute(oaipmhServer, null);
+                listRecordsQuery.execute(oaipmhServer);
                 setsDownloaded.append(set).append(",");
             } catch (HttpServerErrorException | ResourceAccessException e) {
                 LOG.error("Error retrieving set {} {}", set, e);
@@ -106,7 +106,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
             if (!success) {
                 try {
                     LOG.info("Retrying the set {} {} times ", set, i);
-                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer, null);
+                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer);
                     success = true;
                 } catch (HttpServerErrorException | ResourceAccessException ex) {
                     if (i == MAX_RETRIES_PER_THREAD) {

@@ -31,10 +31,10 @@ public class ZipUtility {
     /**
      * method to write in the zip
      */
-    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record record, String fileFormat) {
+    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record recordVal, String fileFormat) {
         try {
-            zout.putNextEntry(new ZipEntry(getEntryName(record, fileFormat)));
-            writer.write(dataToWriteInZip(record.getMetadata().getMetadata(), fileFormat));
+            zout.putNextEntry(new ZipEntry(getEntryName(recordVal, fileFormat)));
+            writer.write(dataToWriteInZip(recordVal.getMetadata().getMetadata(), fileFormat));
             writer.flush();
             zout.closeEntry();
         } catch (IOException e) {
@@ -60,8 +60,8 @@ public class ZipUtility {
      *
      * @return String
      */
-    private static String getEntryName(Record record, String fileExtension) {
-        String id = record.getHeader().getIdentifier();
+    private static String getEntryName(Record recordVal, String fileExtension) {
+        String id = recordVal.getHeader().getIdentifier();
         if (StringUtils.equals(fileExtension, Constants.TTL_FILE)) {
             return StringUtils.substringAfterLast(id, "/") + Constants.TTL_EXTENSION;
         }
@@ -128,8 +128,8 @@ public class ZipUtility {
         return 0;
     }
 
-    public static String generateFileStatus(String fileName, String lastHarvestDate) {
-        String fileStatus = "-";
+    public static ZipFileStatus generateFileStatus(String fileName, String lastHarvestDate,
+        Date currentHarvestStartTime) {
         File file = new File(fileName);
         Path filePath = file.toPath();
         BasicFileAttributes attributes = getBasicFileAttributes(filePath);
@@ -137,9 +137,10 @@ public class ZipUtility {
         if ((milliseconds > Long.MIN_VALUE) && (milliseconds < Long.MAX_VALUE)) {
             Date creationDate = new Date(attributes.creationTime().to(TimeUnit.MILLISECONDS));
             Date modifiedDate = new Date(attributes.lastModifiedTime().to(TimeUnit.MILLISECONDS));
-            fileStatus= getFileStatusValues(creationDate, modifiedDate, getDate(lastHarvestDate));
+            return getFileStatusValues(creationDate, modifiedDate, getDate(lastHarvestDate),currentHarvestStartTime);
         }
-        return  fileStatus;
+        LOG.error("Unable to calculate file download status for "+fileName);
+        return ZipFileStatus.NA;
     }
 
     private static Date getDate(String dateString) {
@@ -163,21 +164,23 @@ public class ZipUtility {
     }
 
 
-    private static String getFileStatusValues(Date creationDate, Date modifiedDate, Date lastHarvestedOn) {
-        String fileStatus = "-";
-        if (creationDate == modifiedDate && lastHarvestedOn == null) {
-            fileStatus = "New";
+    private static ZipFileStatus getFileStatusValues(Date creationDate, Date modifiedDate, Date lastHarvestedOn,
+        Date currentHarvestStartTime) {
+
+        //Nothing was harvested before and file is created in the current harvest
+        if (lastHarvestedOn == null && creationDate.after(currentHarvestStartTime)) {
+           return ZipFileStatus.NEW;
         } else if (lastHarvestedOn != null) {
-            if (modifiedDate.before(lastHarvestedOn) || modifiedDate == lastHarvestedOn) {
-                fileStatus = "Unchanged";
+            //file is modified on or before the lastHarvest
+            if (modifiedDate.before(lastHarvestedOn) || modifiedDate.equals(lastHarvestedOn)) {
+                return ZipFileStatus.UNCHANGED;
             }
-            if (modifiedDate.after(lastHarvestedOn)) {
-                fileStatus = "Changed";
-            }
-            if (creationDate == modifiedDate) {
-                fileStatus = "Reharvested";
+            //file is created in current harvest
+            if (creationDate.after(currentHarvestStartTime) || creationDate.equals(currentHarvestStartTime)) {
+                return  ZipFileStatus.REHARVESTED;
             }
         }
-        return fileStatus;
+        //otherwise file status considered as changed
+        return  ZipFileStatus.CHANGED;
     }
 }

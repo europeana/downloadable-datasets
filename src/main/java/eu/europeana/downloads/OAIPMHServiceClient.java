@@ -93,20 +93,7 @@ public class OAIPMHServiceClient {
             return;
         }
         SetsUtility.createFolders(directoryLocation);
-
-        // failed sets will not be retied in verb is Checksum and if executeFailedSets is set to false
-        if (!StringUtils.equals(Constants.CHECKSUM_VERB, verbToExecute.getVerbName()) && executeFailedSets) {
-            LOG.info("Failed sets flow will be executed : verb {}, executeFailedSets {}", verbToExecute.getVerbName(),executeFailedSets);
-            // First check for failed sets from previous run
-            List<String> failedSets = CSVFile.readCSVFile(CSVFile.getCsvFilePath(directoryLocation));
-            if (!failedSets.isEmpty()) {
-                LOG.info("Found {} failed sets from previous run - {}", failedSets.size(), failedSets);
-                verbToExecute.execute(this, failedSets);
-            } else {
-                LOG.info("No failed sets exist for this harvest.");
-            }
-        }
-        verbToExecute.execute(this, null);
+        verbToExecute.execute(this);
     }
 
     public OAIResponse makeRequest(String request, Class<? extends OAIResponse> responseClass) {
