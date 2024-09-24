@@ -35,9 +35,6 @@ public class OAIPMHServiceClient {
     @Value("${sets-folder}")
     private String directoryLocation;
 
-    @Value("${execute-failed-sets}")
-    private boolean executeFailedSets;
-
     private RestTemplate restTemplate = new RestTemplate();
 
     private ObjectMapper mapper;
