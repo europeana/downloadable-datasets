@@ -46,9 +46,6 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
     @Value("${server-url}")
     private String downloadServerURL;
 
-    @Value("${zips-folder}")
-    private String directoryLocationForReportFile;
-
     private String lastHarvestDate;
 
     private Date currentHarvestStartTime;
@@ -153,7 +150,7 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
                 status.getTimeElapsed(),
                 String.valueOf(setsHarvested),
                 SetsUtility.getTabularData(status));
-        statusReportService.publishStatusReport(status,subject,directoryLocationForReportFile,downloadServerURL);
+        statusReportService.publishStatusReport(status,subject,directoryLocation,downloadServerURL);
     }
 
     private DownloadsStatus executeMultithreadListRecords(OAIPMHServiceClient oaipmhServer, List<String> sets, String lastHarvestDate,Date currentHarvestStartTime) {

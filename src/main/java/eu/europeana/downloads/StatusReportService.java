@@ -41,14 +41,14 @@ public class StatusReportService {
       httpPost.setEntity(entity);
       httpPost.setHeader("Accept", "application/json");
       httpPost.setHeader("Content-type", "application/json");
-      try (CloseableHttpClient httpClient = HttpClients.createDefault();
-          CloseableHttpResponse response = httpClient.execute(httpPost)) {
-        LOG.info("Received status " + response.getStatusLine().getStatusCode()
-            + " while calling slack!");
-        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-          LOG.info(" Successfully sent slack message !");
-        }
-      }
+//      try (CloseableHttpClient httpClient = HttpClients.createDefault();
+//          CloseableHttpResponse response = httpClient.execute(httpPost)) {
+//        LOG.info("Received status " + response.getStatusLine().getStatusCode()
+//            + " while calling slack!");
+//        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+//          LOG.info(" Successfully sent slack message !");
+//        }
+//      }
     } catch (IOException e) {
       LOG.error("Exception occurred while sending slack message !! " + e.getMessage());
     }
@@ -60,7 +60,7 @@ public class StatusReportService {
       } catch (IOException e) {
         LOG.error("Exception occured during report file Creation. ",e.getMessage());
       }
-      LOG.info("Report created in file : "+fileName);
+      LOG.info("Report file {} ",fileName);
       return fileName;
     }
 
@@ -69,7 +69,8 @@ public class StatusReportService {
   }
 
   private static String getReportFileName() {
-    String fileNameSuffix = new SimpleDateFormat("yyyyMMMdd_HHmm").format(new Date());
+
+    String fileNameSuffix = new SimpleDateFormat("yyyy_MM_dd").format(new Date());
     return Constants.DOWNLOAD_STATUS_FILENAME_PREFIX + fileNameSuffix+Constants.CSV_EXTENSION;
   }
 
