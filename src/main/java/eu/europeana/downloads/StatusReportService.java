@@ -41,14 +41,14 @@ public class StatusReportService {
       httpPost.setEntity(entity);
       httpPost.setHeader("Accept", "application/json");
       httpPost.setHeader("Content-type", "application/json");
-//      try (CloseableHttpClient httpClient = HttpClients.createDefault();
-//          CloseableHttpResponse response = httpClient.execute(httpPost)) {
-//        LOG.info("Received status " + response.getStatusLine().getStatusCode()
-//            + " while calling slack!");
-//        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-//          LOG.info(" Successfully sent slack message !");
-//        }
-//      }
+      try (CloseableHttpClient httpClient = HttpClients.createDefault();
+          CloseableHttpResponse response = httpClient.execute(httpPost)) {
+        LOG.info("Received status " + response.getStatusLine().getStatusCode()
+            + " while calling slack!");
+        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+          LOG.info(" Successfully sent slack message !");
+        }
+      }
     } catch (IOException e) {
       LOG.error("Exception occurred while sending slack message !! " + e.getMessage());
     }
@@ -58,7 +58,7 @@ public class StatusReportService {
     try (FileWriter csvWriter = new FileWriter(fileName)) {
         csvWriter.append(fileInput);
       } catch (IOException e) {
-        LOG.error("Exception occured during report file Creation. ",e.getMessage());
+        LOG.error("Exception occured during file Creation. {}",e.getMessage());
       }
       LOG.info("Report file {} ",fileName);
       return fileName;
