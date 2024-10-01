@@ -133,13 +133,18 @@ public class ZipUtility {
         File file = new File(fileName);
         Path filePath = file.toPath();
         BasicFileAttributes attributes = getBasicFileAttributes(filePath);
-        long milliseconds = attributes.creationTime().to(TimeUnit.MILLISECONDS);
-        if ((milliseconds > Long.MIN_VALUE) && (milliseconds < Long.MAX_VALUE)) {
-            Date creationDate = new Date(attributes.creationTime().to(TimeUnit.MILLISECONDS));
-            Date modifiedDate = new Date(attributes.lastModifiedTime().to(TimeUnit.MILLISECONDS));
-            return getFileStatusValues(creationDate, modifiedDate, getDate(lastHarvestDate),currentHarvestStartTime);
+        if(attributes != null && attributes.creationTime() != null) {
+            long milliseconds = attributes.creationTime().to(TimeUnit.MILLISECONDS);
+            if ((milliseconds > Long.MIN_VALUE) && (milliseconds < Long.MAX_VALUE)) {
+                Date creationDate = new Date(attributes.creationTime().to(TimeUnit.MILLISECONDS));
+                Date modifiedDate = new Date(
+                    attributes.lastModifiedTime().to(TimeUnit.MILLISECONDS));
+                return getFileStatusValues(creationDate, modifiedDate, getDate(lastHarvestDate),
+                    currentHarvestStartTime);
+            }
+            LOG.error("Unable to calculate file download status for {}" , fileName);
         }
-        LOG.error("Unable to calculate file download status for "+fileName);
+        LOG.error("Unable to get details for file {}",fileName);
         return ZipFileStatus.NA;
     }
 
@@ -158,7 +163,7 @@ public class ZipUtility {
         try {
             attributes = Files.readAttributes(filePath, BasicFileAttributes.class);
         } catch (IOException exception) {
-            LOG.error(exception.getMessage());
+            LOG.error("Error occurred while getting file details: {} ",exception.getMessage());
         }
         return attributes;
     }
