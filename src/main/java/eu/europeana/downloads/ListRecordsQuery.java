@@ -249,9 +249,14 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         return status;
     }
 
+    /*
+     This Method updates the status for the sets which were requested but were not downloaded
+     */
     private void updateFileStatusMapForTheFailedSets(Map<String, ZipFileStatus> fileStatusMap, List<String> setsFromListSets) {
         for (String failedSetId:setsFromListSets){
-            fileStatusMap.put(failedSetId,ZipFileStatus.NA);
+          if(fileStatusMap.get(failedSetId)==null) {
+              fileStatusMap.put(failedSetId, ZipFileStatus.NA);
+          }
         }
     }
 
@@ -447,8 +452,12 @@ public class ListRecordsQuery extends BaseQuery implements OAIPMHQuery {
         }
         //Put status for failed sets , these are considered as the partially downloaded sets as we do not have all records properly downloaded
         for(Entry<String,String> kv : failedrecordPerSet.entrySet()){
-            String fileName = SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)+Constants.PATH_SEPERATOR+kv.getKey() + Constants.ZIP_EXTENSION;
-            statusMap.put(kv.getKey(),ZipUtility.generateFileStatus(fileName,lastHarvestDate,currentHarvestStartTime));
+            if(statusMap.get(kv.getKey())==null) {
+                String fileName = SetsUtility.getFolderName(directoryLocation, Constants.XML_FILE)
+                    + Constants.PATH_SEPERATOR + kv.getKey() + Constants.ZIP_EXTENSION;
+                statusMap.put(kv.getKey(), ZipUtility.generateFileStatus(fileName, lastHarvestDate,
+                    currentHarvestStartTime));
+            }
         }
         return statusMap;
     }
