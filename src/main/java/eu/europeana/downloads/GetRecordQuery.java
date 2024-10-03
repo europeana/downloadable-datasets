@@ -9,7 +9,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import java.io.OutputStreamWriter;
-import java.util.List;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -47,7 +46,7 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
     }
 
     @Override
-    public void execute(OAIPMHServiceClient oaipmhServer, List<String> sets) {
+    public void execute(OAIPMHServiceClient oaipmhServer) {
         execute(oaipmhServer, identifier, zipOutputStream,writer);
     }
 
@@ -58,20 +57,20 @@ public class GetRecordQuery extends BaseQuery implements OAIPMHQuery {
         GetRecordResponse response = oaipmhServer.getGetRecordRequest(request);
         GetRecord responseObject = response.getGetRecord();
         if (responseObject != null) {
-            Record record = responseObject.getRecord();
-            if (record == null) {
+            Record recordVal = responseObject.getRecord();
+            if (recordVal == null) {
                 LOG.error("No record in GetRecordResponse for identifier {}", currentIdentifier);
                 return;
             }
-            Header header = record.getHeader();
+            Header header = recordVal.getHeader();
             if (header != null && currentIdentifier.equals(header.getIdentifier())) {
-                RDFMetadata metadata = record.getMetadata();
+                RDFMetadata metadata = recordVal.getMetadata();
                 if (metadata == null || metadata.getMetadata() == null || metadata.getMetadata().isEmpty()) {
                     LOG.error("Empty metadata for identifier {}", currentIdentifier);
                 }
             }
             //write in Zip
-            ZipUtility.writeInZip(zout, writer, record, fileFormat);
+            ZipUtility.writeInZip(zout, writer, recordVal, fileFormat);
         }
 
         LOG.info("GetRecord for identifier {} executed in {} ms", currentIdentifier, (System.currentTimeMillis() - start));

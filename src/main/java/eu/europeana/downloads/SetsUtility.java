@@ -37,7 +37,7 @@ public class SetsUtility {
             return Files.readString(Paths.get(path));
         } catch (NoSuchFileException e) {
             String msg = (set.isEmpty() || set.equals("ALL")) ? "ALL" : set;
-            LOG.error("{} file doesn't exist. Harvesting sets : {} " , Constants.HARVEST_DATE_FILENAME, msg);
+            LOG.error("{} file doesn't exist at {}. Harvesting sets : {} " , Constants.HARVEST_DATE_FILENAME,path, msg);
         } catch (IOException e) {
                 LOG.error("Error reading the lastHarvestDate file", e);
         }
@@ -208,8 +208,8 @@ public class SetsUtility {
      * Returns the string in the format of table including sets
      * and the record count of the successfully harvested datasets
      *
-     * @param status
-     * @return
+     * @param status -
+     * @return string -
      */
     public static String getTabularData(DownloadsStatus status) {
         StringBuilder tableData = new StringBuilder();
@@ -231,56 +231,64 @@ public class SetsUtility {
         return tableData.toString();
     }
 
-    public static String getSetRecordDataJson(DownloadsStatus status,String setsHarvested,String subject){
-        StringBuilder jsonOutPut = new StringBuilder();
+   public static void generateReportsInput(DownloadsStatus status,String subject,StringBuilder fileInput,StringBuilder result,String reportFile){
 
-        String begin="{\"blocks\":[";
-        String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: %s\",\"type\":\"plain_text\"},\"type\":\"header\"}";
-        String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Number of datasets: %s\"}}";
-        String harvestCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Datasets Harvested: %s\"}}";
-        String tableHeader = "{\"fields\": [{\"text\": \"*Set Id*\",\"type\": \"mrkdwn\"},{\"text\": \"*No. of Records*\",\"type\": \"mrkdwn\"}],\"type\": \"section\"}";
-        String tableRow = "{\"fields\":[{\"text\":\"%s\",\"type\":\"mrkdwn\"},{\"text\":\"%s\",\"type\":\"mrkdwn\"}],\"type\":\"section\"}";
-        String tableFooter = "{\"fields\": [{\"text\": \"*Total*\",\"type\": \"mrkdwn\"},{\"text\": \"%s\",\"type\": \"mrkdwn\"}],\"type\": \"section\"}";
-        String rowDivider = "{\"type\": \"divider\"}";
-        String end="]}";
-        String comma = ",";
+       String begin="{\"blocks\":[";
+       String reportHeader = "{\"text\":{\"emoji\":true,\"text\":\":pencil: %s\",\"type\":\"plain_text\"},\"type\":\"header\"}";
+       String datasetCount = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"%s datasets were processed\"}}";
+       String overViewDetails ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Status Overview: \\n new: %s, changed: %s, unchanged: %s, reharvested: %s, deleted: %s\"}}";
+       String reportLocation ="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Full report <%s|here>\"}}";
+       String tableHeader = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*Dataset                  Status           Total Records    Failed Records*\"}}";
+       String tableRow = "{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"``` %s %s  %s %s ```\"}}";
+       String rowDivider = "{\"type\": \"divider\"}";
+       String end="]}";
+       String comma = ",";
 
-        jsonOutPut.append(begin);
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(comma);
+       result.append(begin).append(String.format(datasetCount,status.getNoOfSets())).append(comma);
 
-        jsonOutPut.append(String.format(reportHeader,subject));
-        jsonOutPut.append(comma);
+       Map<ZipFileStatus, Integer> valueCountMap = getValueCountMap(status.getSetsFileStatusMap());
+       result.append(String.format(overViewDetails,
+           valueCountMap.getOrDefault(ZipFileStatus.NEW,0),valueCountMap.getOrDefault(ZipFileStatus.CHANGED,0),
+           valueCountMap.getOrDefault(ZipFileStatus.UNCHANGED,0),valueCountMap.getOrDefault(ZipFileStatus.REHARVESTED,0),
+           valueCountMap.getOrDefault(ZipFileStatus.DELETED,0)
+           )).append(comma);
 
-        jsonOutPut.append(String.format(datasetCount,status.getNoOfSets()));
-        jsonOutPut.append(comma);
+       result.append(String.format(reportLocation,reportFile)).append(comma);
 
-        jsonOutPut.append(String.format(harvestCount,setsHarvested));
-        jsonOutPut.append(comma);
-
-        jsonOutPut.append(tableHeader);
-        jsonOutPut.append(comma);
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(comma);
-
-        long totalRecords = 0;
-        if (!status.getSetsRecordCountMap().isEmpty()) {
-            for (Map.Entry<String, Long> entry : status.getSetsRecordCountMap().entrySet()) {
-                jsonOutPut.append(String.format(tableRow,entry.getKey(),entry.getValue()));
-                jsonOutPut.append(comma);
-                totalRecords += entry.getValue();
+       if (!status.getSetsFileStatusMap().isEmpty()){
+           result.append(tableHeader).append(comma);
+           int counter =0;
+           fileInput.append("DatasetId,FileStatus,TotalRecords,FailedRecords").append("\n");
+           for (Map.Entry<String, ZipFileStatus> entry : status.getSetsFileStatusMap().entrySet()) {
+                   String failedRecords = status.getFailedRecordsCountMap().getOrDefault(entry.getKey(),"0");
+                   String totalRecordsForSet = String.valueOf(status.getSetsRecordCountMap().getOrDefault(entry.getKey(),0L));
+                   if(counter++ <=Constants.MAX_RESULT_ROWS_FOR_SLACK_MESSAGE) {
+                       result.append(String.format(tableRow,
+                           StringUtils.rightPad(entry.getKey(), Constants.TABLE_CELL_SIZE),
+                           StringUtils.rightPad(entry.getValue().toString(),
+                               Constants.TABLE_CELL_SIZE),
+                           StringUtils.rightPad(totalRecordsForSet, Constants.TABLE_CELL_SIZE),
+                           StringUtils.rightPad(failedRecords, Constants.TABLE_CELL_SIZE)
+                       ));
+                       result.append(comma);
+                   }
+               fileInput.append(entry.getKey()).append(comma);fileInput.append(entry.getValue()).append(comma);
+               fileInput.append(totalRecordsForSet).append(comma);fileInput.append(failedRecords).append("\n");
+           }
+       }
+       result.append(rowDivider).append(end);
+   }
+    private static Map<ZipFileStatus,Integer> getValueCountMap(Map<String,ZipFileStatus> inputMap){
+        Map<ZipFileStatus,Integer> resultMap = new HashMap<>();
+        for(ZipFileStatus val :inputMap.values()){
+            if(resultMap.get(val) == null){
+                resultMap.put(val,1);
+            }
+            else {
+                int count = resultMap.get(val);
+                resultMap.put(val,count+1);
             }
         }
-
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(comma);
-        jsonOutPut.append(String.format(tableFooter,totalRecords));
-        jsonOutPut.append(comma);
-        jsonOutPut.append(rowDivider);
-        jsonOutPut.append(end);
-
-        return jsonOutPut.toString();
+        return resultMap;
     }
-
-
 }

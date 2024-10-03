@@ -77,7 +77,8 @@ public class ListIdentifierExecutor implements Callable<ListRecordsResult> {
             }
 
         }
-        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, String.join(", ", sets), errors);
+        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, String.join(", ", sets), errors,
+            null);
     }
 
     /**
@@ -98,7 +99,7 @@ public class ListIdentifierExecutor implements Callable<ListRecordsResult> {
 
             for (String identifier : identifiers) {
                 try {
-                    new GetRecordQuery(metadataPrefix, identifier, zout, writer).execute(oaipmhServer, null);
+                    new GetRecordQuery(metadataPrefix, identifier, zout, writer).execute(oaipmhServer);
                 } catch (Exception e) {
                     LOG.error("Error retrieving identifier {} for set {} ", identifier, setIdentifier, e);
                     errors++;

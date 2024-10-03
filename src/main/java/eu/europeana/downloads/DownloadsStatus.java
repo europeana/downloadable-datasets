@@ -13,6 +13,10 @@ public class DownloadsStatus {
     private String retriedSetsStatus;
     Map<String, Long> setsRecordCountMap = new HashMap<>();
 
+    Map<String,ZipFileStatus> setsFileStatusMap = new HashMap<>();
+
+    Map<String,String> failedRecordsCountMap = new HashMap<>();
+
     public DownloadsStatus() {
 
     }
@@ -71,16 +75,36 @@ public class DownloadsStatus {
         this.setsRecordCountMap = setsRecordCountMap;
     }
 
+    public void setsFileStatusMap(Map<String, ZipFileStatus> fileStatusMap) {
+        this.setsFileStatusMap=fileStatusMap;
+    }
+
+    public Map<String, ZipFileStatus> getSetsFileStatusMap() {
+        return setsFileStatusMap;
+    }
+    public void setFailedRecordsCountMap(Map<String, String> failedRecordsCountMap) {
+        this.failedRecordsCountMap = failedRecordsCountMap;
+    }
+    public Map<String, String> getFailedRecordsCountMap() {
+        return failedRecordsCountMap;
+    }
+
+    public void setSetsFailedRecordsCountMap(
+        Map<String, String> setsFailedRecordsCountMap) {
+        this.failedRecordsCountMap = setsFailedRecordsCountMap;
+    }
+
     @Override
     public String toString() {
         return "DownloadsStatus{" +
-                "noOfSets=" + noOfSets +
-                ", setsHarvested=" + setsHarvested +
-                ", startTime=" + startTime +
-                ", timeElapsed='" + timeElapsed + '\'' +
-                ", retriedSetsStatus='" + retriedSetsStatus + '\'' +
-                ", setsRecordCountMap=" + setsRecordCountMap +
-                '}';
+            "noOfSets=" + noOfSets +
+            ", setsHarvested=" + setsHarvested +
+            ", startTime=" + startTime +
+            ", timeElapsed='" + timeElapsed + '\'' +
+            ", retriedSetsStatus='" + retriedSetsStatus + '\'' +
+            ", setsRecordCountMap=" + setsRecordCountMap +
+            ", setsFileStatusMap=" + setsFileStatusMap +
+            '}';
     }
 }
 

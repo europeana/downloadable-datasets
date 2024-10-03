@@ -1,6 +1,13 @@
 package eu.europeana.downloads;
 
 import eu.europeana.oaipmh.model.Record;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,10 +31,10 @@ public class ZipUtility {
     /**
      * method to write in the zip
      */
-    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record record, String fileFormat) {
+    public static void writeInZip(ZipOutputStream zout, OutputStreamWriter writer, Record recordVal, String fileFormat) {
         try {
-            zout.putNextEntry(new ZipEntry(getEntryName(record, fileFormat)));
-            writer.write(dataToWriteInZip(record.getMetadata().getMetadata(), fileFormat));
+            zout.putNextEntry(new ZipEntry(getEntryName(recordVal, fileFormat)));
+            writer.write(dataToWriteInZip(recordVal.getMetadata().getMetadata(), fileFormat));
             writer.flush();
             zout.closeEntry();
         } catch (IOException e) {
@@ -53,8 +60,8 @@ public class ZipUtility {
      *
      * @return String
      */
-    private static String getEntryName(Record record, String fileExtension) {
-        String id = record.getHeader().getIdentifier();
+    private static String getEntryName(Record recordVal, String fileExtension) {
+        String id = recordVal.getHeader().getIdentifier();
         if (StringUtils.equals(fileExtension, Constants.TTL_FILE)) {
             return StringUtils.substringAfterLast(id, "/") + Constants.TTL_EXTENSION;
         }
@@ -119,5 +126,66 @@ public class ZipUtility {
             LOG.error("Error reading the zip file {}", zipName, e);
         }
         return 0;
+    }
+
+    public static ZipFileStatus generateFileStatus(String fileName, String lastHarvestDate,
+        Date currentHarvestStartTime) {
+        File file = new File(fileName);
+        Path filePath = file.toPath();
+        BasicFileAttributes attributes = getBasicFileAttributes(filePath);
+        if(attributes != null && attributes.creationTime() != null) {
+            long milliseconds = attributes.creationTime().to(TimeUnit.MILLISECONDS);
+            if ((milliseconds > Long.MIN_VALUE) && (milliseconds < Long.MAX_VALUE)) {
+                Date creationDate = new Date(attributes.creationTime().to(TimeUnit.MILLISECONDS));
+                Date modifiedDate = new Date(
+                    attributes.lastModifiedTime().to(TimeUnit.MILLISECONDS));
+                return getFileStatusValues(creationDate, modifiedDate, getDate(lastHarvestDate),
+                    currentHarvestStartTime);
+            }
+            LOG.error("Unable to calculate file download status for {}" , fileName);
+        }
+        LOG.error("Unable to get details for file {}",fileName);
+        return ZipFileStatus.NA;
+    }
+
+    private static Date getDate(String dateString) {
+        Date dateValue = null;
+        if (StringUtils.isNotEmpty(dateString)) {
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+            OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString, formatter);
+            dateValue = Date.from(offsetDateTime.toInstant());
+        }
+        return dateValue;
+    }
+
+    private static BasicFileAttributes getBasicFileAttributes(Path filePath) {
+        BasicFileAttributes attributes = null;
+        try {
+            attributes = Files.readAttributes(filePath, BasicFileAttributes.class);
+        } catch (IOException exception) {
+            LOG.error("Error occurred while getting file details: {} ",exception.getMessage());
+        }
+        return attributes;
+    }
+
+
+    private static ZipFileStatus getFileStatusValues(Date creationDate, Date modifiedDate, Date lastHarvestedOn,
+        Date currentHarvestStartTime) {
+
+        //Nothing was harvested before and file is created in the current harvest
+        if (lastHarvestedOn == null && creationDate.after(currentHarvestStartTime)) {
+           return ZipFileStatus.NEW;
+        } else if (lastHarvestedOn != null) {
+            //file is modified on or before the lastHarvest
+            if (modifiedDate.before(lastHarvestedOn) || modifiedDate.equals(lastHarvestedOn)) {
+                return ZipFileStatus.UNCHANGED;
+            }
+            //file is created in current harvest
+            if (creationDate.after(currentHarvestStartTime) || creationDate.equals(currentHarvestStartTime)) {
+                return  ZipFileStatus.REHARVESTED;
+            }
+        }
+        //otherwise file status considered as changed
+        return  ZipFileStatus.CHANGED;
     }
 }

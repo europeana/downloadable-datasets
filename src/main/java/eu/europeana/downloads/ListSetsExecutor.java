@@ -1,5 +1,7 @@
 package eu.europeana.downloads;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.client.HttpServerErrorException;
@@ -29,6 +31,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
 
     private OAIPMHServiceClient oaipmhServer;
 
+
     public ListSetsExecutor(List<String> sets, String metadataPrefix, String directoryLocation, OAIPMHServiceClient oaipmhServer, int logProgressInterval) {
         this.sets = sets;
         this.metadataPrefix = metadataPrefix;
@@ -53,9 +56,12 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
                         loggerThreadId, sets.size(), logProgressInterval);
             }
         }
+        Map<String, String> failedRecordCountPerSet = new HashMap<String, String>();
         for (String set : sets) {
+            ListRecordsQuery listRecordsQuery = new ListRecordsQuery(metadataPrefix, set,
+                directoryLocation, logProgressInterval);
             try {
-                new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer, null);
+                listRecordsQuery.execute(oaipmhServer);
                 setsDownloaded.append(set).append(",");
             } catch (HttpServerErrorException | ResourceAccessException e) {
                 LOG.error("Error retrieving set {} {}", set, e);
@@ -81,8 +87,10 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
                 counter++;
                 logger.logProgress(counter);
             }
+            long failedRecordCount = Long.valueOf(listRecordsQuery.recordsTobeDownloaded)- listRecordsQuery.recordsDownloaded;
+            failedRecordCountPerSet.put(set,String.valueOf(failedRecordCount));
         }
-        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, setsDownloaded.toString(), errors);
+        return new ListRecordsResult((System.currentTimeMillis() - start) / 1000F, setsDownloaded.toString(), errors,failedRecordCountPerSet);
     }
 
     /**
@@ -98,7 +106,7 @@ public class ListSetsExecutor implements Callable<ListRecordsResult> {
             if (!success) {
                 try {
                     LOG.info("Retrying the set {} {} times ", set, i);
-                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer, null);
+                    new ListRecordsQuery(metadataPrefix, set, directoryLocation, logProgressInterval).execute(oaipmhServer);
                     success = true;
                 } catch (HttpServerErrorException | ResourceAccessException ex) {
                     if (i == MAX_RETRIES_PER_THREAD) {
