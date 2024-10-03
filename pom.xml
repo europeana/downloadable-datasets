@@ -46,6 +46,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot.version}</version>
             <exclusions>
                 <!-- use log4j2 instead -->
                 <exclusion>
@@ -64,6 +65,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
+            <version>6.1.8</version>
         </dependency>
 
         <dependency>
