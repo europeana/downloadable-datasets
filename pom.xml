@@ -21,7 +21,7 @@
 
         <oai-pmh.version>0.9.1</oai-pmh.version>
 <!--    <spring-boot.version>2.2.2.RELEASE</spring-boot.version>-->
-        <spring-boot.version>3.3.0</spring-boot.version>
+        <spring-boot.version>3.2.10</spring-boot.version>
         <jackson.version>2.14.2</jackson.version>
         <apiCommons.version>0.4.2</apiCommons.version>
         <spring.boot.mainclass>eu.europeana.downloads.DownloadsGenerator</spring.boot.mainclass>
@@ -46,7 +46,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
             <exclusions>
                 <!-- use log4j2 instead -->
                 <exclusion>
@@ -59,7 +58,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
-            <version>${spring-boot.version}</version>
         </dependency>
 
         <dependency>
@@ -121,7 +119,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>eu.europeana.downloads.DownloadsGenerator</mainClass>
                 </configuration>
