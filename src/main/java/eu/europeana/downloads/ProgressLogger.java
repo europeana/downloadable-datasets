@@ -69,16 +69,24 @@ public class ProgressLogger {
      * @return string containing duration in easy readable format
      */
     public static String getDurationText(long durationInMs) {
-        String result;
-        Period period = new Period(durationInMs);
-        if (period.getDays() >= 1) {
-            result = String.format("%d days, %d hours and %d minutes", period.getDays(), period.getHours(), period.getMinutes());
-        } else if (period.getHours() >= 1) {
-            result = String.format("%d hours and %d minutes", period.getHours(), period.getMinutes());
-        } else if (period.getMinutes() >= 1){
-            result = String.format("%d minutes and %d seconds", period.getMinutes(), period.getSeconds());
-        } else {
-            result = String.format("%d.%d seconds", period.getSeconds(), period.getMillis());
+        String result = null;
+        try {
+            Period period = new Period(durationInMs);
+            if (period.getDays() >= 1) {
+                result = String.format("%d days, %d hours and %d minutes", period.getDays(),
+                    period.getHours(), period.getMinutes());
+            } else if (period.getHours() >= 1) {
+                result = String.format("%d hours and %d minutes", period.getHours(),
+                    period.getMinutes());
+            } else if (period.getMinutes() >= 1) {
+                result = String.format("%d minutes and %d seconds", period.getMinutes(),
+                    period.getSeconds());
+            } else {
+                result = String.format("%d.%d seconds", period.getSeconds(), period.getMillis());
+            }
+        } catch (ArithmeticException ex) {
+            LOG.error("Error occurred while calculating progress duration for value {}  : {} ",durationInMs, ex.getMessage());
+            ex.printStackTrace();
         }
         return result;
     }
