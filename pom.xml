@@ -5,7 +5,7 @@
     <parent>
         <groupId>eu.europeana</groupId>
         <artifactId>europeana-parent-pom</artifactId>
-        <version>2.4</version>
+        <version>3.0</version>
     </parent>
 
 
@@ -15,15 +15,14 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <oai-pmh.version>0.9.1</oai-pmh.version>
-<!--    <spring-boot.version>2.2.2.RELEASE</spring-boot.version>-->
+        <oai-pmh.version>0.9.3</oai-pmh.version>
         <spring-boot.version>3.2.10</spring-boot.version>
         <jackson.version>2.14.2</jackson.version>
-        <apiCommons.version>0.4.2</apiCommons.version>
+        <apiCommons.version>0.4.10</apiCommons.version>
         <spring.boot.mainclass>eu.europeana.downloads.DownloadsGenerator</spring.boot.mainclass>
     </properties>
 
@@ -114,7 +113,19 @@
         </dependency>
     </dependencies>
 
+
     <build>
+        <!-- TO Fix error No plugin found for prefix 'sonar' in the current project and in the plugin groups [org.apache.maven.plugins, org.codehaus.mojo]
+         available from the repositories -->
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>3.7.0.1746</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
